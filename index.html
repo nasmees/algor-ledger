@@ -4,347 +4,642 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ALGOR LEDGER — small computer · real books</title>
-<meta name="description" content="ระบบบัญชี + สินค้าคงคลังแบบ CLI/GUI สำหรับร้านเล็ก Offline 100% เข้ารหัส ไม่พึ่ง cloud — CRT amber terminal">
+<meta name="description" content="Offline CLI/GUI ledger & inventory for small shops. Encrypted vault, receipts, CRT amber terminal. No cloud.">
 <meta name="theme-color" content="#100a04">
 <meta property="og:title" content="ALGOR LEDGER">
 <meta property="og:description" content="small computer · real books — offline ledger for small shops">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23100a04'/%3E%3Crect x='3' y='3' width='26' height='26' rx='2' fill='none' stroke='%23ffb000' stroke-width='1.5'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='monospace' font-size='14' font-weight='700' fill='%23ffb000'%3EAL%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #100a04;
     --panel: #160e06;
-    --bezel: #1a1208;
     --phosphor: #ffb000;
+    --phosphor-dim: #8a5a12;
+    --phosphor-dark: #3d2808;
+    --text: #e8c36a;
+    --muted: #8a5a12;
+    --amber: #ffb000;
     --bright: #ffd27a;
-    --dim: #8a5a12;
-    --dark: #3d2808;
-    --warn: #ff9f1a;
+    --green: #ffd27a;
+    --border: #3d2808;
     --error: #ff6a3d;
-    --menu: #e8c36a;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    min-height: 100%;
+  html { scroll-behavior: smooth; }
+  body {
     background: var(--bg);
-    color: var(--phosphor);
-    font-family: "IBM Plex Mono", "Courier New", monospace;
-    font-size: 15px;
-    line-height: 1.5;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    line-height: 1.65;
+    min-height: 100vh;
   }
   body::before {
     content: "";
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.18) 2px,
-      rgba(0, 0, 0, 0.18) 4px
-    );
-    pointer-events: none;
-    z-index: 100;
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,176,0,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,176,0,0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
   }
   body::after {
     content: "";
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.45) 100%);
-    pointer-events: none;
-    z-index: 99;
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px),
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(80, 45, 0, 0.22), transparent);
   }
+  .wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 0 20px 80px; }
 
-  .wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 28px 18px 64px;
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 0; border-bottom: 1px solid var(--border); margin-bottom: 40px; flex-wrap: wrap; gap: 12px;
   }
+  nav .logo {
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600;
+    color: var(--phosphor); font-size: 15px; letter-spacing: 1px;
+    text-decoration: none;
+  }
+  nav .logo span { color: var(--bright); font-weight: 500; font-size: 11px; margin-left: 6px; }
+  nav .right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  nav .links a {
+    color: var(--muted); text-decoration: none; font-size: 13px; margin-left: 14px;
+  }
+  nav .links a:hover { color: var(--phosphor); }
 
-  .crt {
-    background: var(--panel);
-    border: 2px solid var(--dark);
-    border-radius: 14px;
-    box-shadow:
-      0 0 0 1px var(--dim),
-      0 0 40px rgba(255, 176, 0, 0.12),
-      inset 0 0 60px rgba(0, 0, 0, 0.35);
-    overflow: hidden;
+  .lang-switch {
+    display: flex; border: 1px solid var(--border); overflow: hidden;
   }
+  .lang-switch button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
+    background: transparent; color: var(--muted); border: none;
+    padding: 6px 12px; cursor: pointer; letter-spacing: 0.5px;
+  }
+  .lang-switch button.active {
+    background: var(--phosphor); color: #100a04;
+  }
+  .lang-switch button:not(.active):hover { color: var(--phosphor); }
 
-  .titlebar {
-    background: var(--phosphor);
-    color: var(--bg);
-    padding: 8px 14px;
-    font-weight: 600;
-    font-size: 13px;
-    letter-spacing: 1px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .hero { text-align: center; padding: 12px 0 48px; }
+  .hero .tag {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--phosphor-dim); border: 1px solid var(--border); padding: 4px 12px;
+    margin-bottom: 20px; letter-spacing: 0.5px;
   }
-  .titlebar span.muted { opacity: 0.7; font-weight: 500; }
+  .hero h1 {
+    font-family: 'IBM Plex Mono', monospace; font-size: clamp(26px, 5vw, 40px);
+    font-weight: 600; color: var(--phosphor); letter-spacing: 2px; margin-bottom: 8px;
+    text-shadow: 0 0 12px rgba(255,176,0,0.25);
+  }
+  .hero .subtitle {
+    font-family: 'IBM Plex Mono', monospace; color: var(--bright); font-size: 13px; margin-bottom: 24px;
+  }
+  .hero .lead { font-size: 16.5px; color: var(--text); max-width: 580px; margin: 0 auto 32px; }
 
-  .screen { padding: 28px 22px 32px; }
-
-  .glow {
-    text-shadow: 0 0 6px rgba(255, 176, 0, 0.45), 0 0 18px rgba(255, 176, 0, 0.15);
-  }
-
-  .logo {
-    color: var(--bright);
-    font-weight: 600;
-    font-size: clamp(1.1rem, 3vw, 1.35rem);
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-  .tagline {
-    color: var(--dim);
-    font-size: 13px;
-    margin-bottom: 22px;
-  }
-
-  h1 {
-    font-size: clamp(1.4rem, 4vw, 1.85rem);
-    color: var(--bright);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-bottom: 10px;
-  }
-  .lead {
-    color: var(--phosphor);
-    max-width: 38em;
-    margin-bottom: 24px;
-  }
-  .lead strong { color: var(--bright); }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 28px;
-  }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 10px 18px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.4px;
-    text-decoration: none;
-    border: 2px solid var(--phosphor);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 500;
+    text-decoration: none; padding: 12px 22px; border: 1px solid var(--phosphor); transition: 0.15s;
   }
-  .btn-primary {
-    background: var(--phosphor);
-    color: var(--bg);
-    border-color: var(--bright);
+  .btn-primary { background: var(--phosphor); color: #100a04; }
+  .btn-primary:hover { background: var(--bright); box-shadow: 0 0 20px rgba(255,176,0,0.3); }
+  .btn-ghost { background: transparent; color: var(--phosphor); }
+  .btn-ghost:hover { background: rgba(255,176,0,0.08); }
+
+  .preview {
+    background: #0a0602; border: 1px solid var(--phosphor-dim); margin: 0 auto 52px;
+    max-width: 640px; overflow: hidden; box-shadow: 0 0 40px rgba(255,176,0,0.1);
   }
-  .btn-primary:hover {
-    background: var(--bright);
-    color: var(--bg);
+  .preview-bar {
+    background: #160e06; border-bottom: 1px solid var(--phosphor-dark);
+    padding: 8px 12px; display: flex; justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--phosphor-dim);
   }
-  .btn-ghost {
-    background: transparent;
-    color: var(--phosphor);
+  .preview-bar .dot { color: var(--phosphor); }
+  .preview-body {
+    padding: 16px 18px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px; line-height: 1.55; color: var(--phosphor); min-height: 170px;
   }
-  .btn-ghost:hover {
-    background: var(--bezel);
-    border-color: var(--bright);
-    color: var(--bright);
+  .preview-body .dim { color: var(--phosphor-dim); }
+  .preview-body .cmd { color: var(--bright); }
+  .preview-body .amber { color: var(--bright); }
+  .preview-body .cursor {
+    display: inline-block; width: 8px; height: 14px; background: var(--phosphor);
+    vertical-align: middle; animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  section { margin-bottom: 52px; }
+  section h2 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
+    color: var(--phosphor); letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 18px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
   }
 
-  .panel {
-    border: 1px solid var(--dark);
-    background: #0c0804;
-    padding: 16px 16px 14px;
-    margin-bottom: 14px;
+  .features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;
   }
-  .panel h2 {
-    font-size: 13px;
-    color: var(--menu);
-    font-weight: 600;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-    text-transform: uppercase;
+  .feature {
+    background: var(--panel); border: 1px solid var(--border); padding: 16px;
   }
-  .panel p, .panel li {
-    color: var(--phosphor);
-    font-size: 13px;
+  .feature h3 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--phosphor); margin-bottom: 6px;
   }
-  .panel ul {
-    list-style: none;
-    padding: 0;
+  .feature p { font-size: 13.5px; color: var(--muted); }
+
+  .prose {
+    background: var(--panel); border: 1px solid var(--border); padding: 22px 24px; font-size: 14.5px;
   }
-  .panel li {
-    padding: 4px 0 4px 14px;
-    position: relative;
-  }
-  .panel li::before {
-    content: ">";
-    position: absolute;
-    left: 0;
-    color: var(--dim);
+  .prose p { margin-bottom: 12px; color: var(--text); }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose .quote {
+    border-left: 2px solid var(--phosphor-dim); padding-left: 14px; color: var(--muted);
+    font-style: italic; margin: 16px 0;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 14px;
+  .tech-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
   }
-  @media (max-width: 640px) {
-    .grid { grid-template-columns: 1fr; }
+  .tech-item {
+    border: 1px solid var(--border); padding: 14px 16px; background: var(--panel);
+  }
+  .tech-item .label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--bright);
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .tech-item .value { font-size: 13.5px; color: var(--text); }
+
+  .use-cases {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px;
+  }
+  .use-case {
+    background: var(--panel); border: 1px solid var(--border); padding: 18px 16px;
+  }
+  .use-case h3 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--phosphor); margin-bottom: 8px;
+  }
+  .use-case p { font-size: 13.5px; color: var(--muted); }
+
+  .steps { counter-reset: step; list-style: none; }
+  .steps li {
+    position: relative; padding: 12px 0 12px 48px;
+    border-bottom: 1px solid var(--border); font-size: 14.5px; color: var(--text);
+  }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 0; top: 12px; width: 28px; height: 28px;
+    border: 1px solid var(--phosphor-dim); color: var(--phosphor);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps code, .prose code, .security code, .cmds code {
+    font-family: 'IBM Plex Mono', monospace; background: rgba(255,176,0,0.1);
+    color: var(--bright); padding: 1px 6px; font-size: 12.5px;
   }
 
-  .term {
-    background: #000;
-    border: 2px solid var(--dark);
-    padding: 14px 16px;
-    font-size: 12.5px;
-    line-height: 1.45;
-    color: var(--phosphor);
-    overflow-x: auto;
-    margin-bottom: 14px;
+  .cmds {
+    background: var(--panel); border: 1px solid var(--border); padding: 18px 20px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.7;
   }
-  .term .c { color: var(--bright); }
-  .term .d { color: var(--dim); }
-  .term .m { color: var(--menu); }
-  .term .w { color: var(--warn); }
+  .cmds .row {
+    display: grid; grid-template-columns: minmax(140px, 1fr) 2fr; gap: 8px;
+    padding: 4px 0; border-bottom: 1px solid rgba(61,40,8,0.7);
+  }
+  .cmds .row:last-child { border-bottom: none; }
+  .cmds .k { color: var(--bright); }
+  .cmds .v { color: var(--muted); }
 
-  .footer {
-    margin-top: 22px;
-    padding-top: 14px;
-    border-top: 1px solid var(--dark);
-    font-size: 12px;
-    color: var(--dim);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    justify-content: space-between;
+  .security {
+    background: var(--panel); border: 1px solid var(--border); padding: 20px 22px; font-size: 14px;
   }
-  .footer a {
-    color: var(--menu);
-    text-decoration: none;
-  }
-  .footer a:hover { color: var(--bright); text-decoration: underline; }
+  .security ul { margin: 12px 0 0 18px; color: var(--muted); }
+  .security li { margin-bottom: 4px; }
 
-  .status-line {
-    font-size: 12px;
-    color: var(--dim);
-    margin-bottom: 18px;
+  .notice {
+    border-left: 3px solid var(--phosphor);
+    background: rgba(255, 176, 0, 0.06);
+    padding: 12px 14px; margin-top: 14px; font-size: 13.5px; color: var(--muted);
   }
-  .status-line .ok { color: var(--phosphor); }
+  .notice strong { color: var(--phosphor); }
+
+  footer {
+    border-top: 1px solid var(--border); padding-top: 24px; text-align: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted);
+  }
+  footer a { color: var(--phosphor-dim); text-decoration: none; }
+  footer a:hover { color: var(--phosphor); }
+
+  [data-lang] { display: none; }
+  html[lang="th"] [data-lang="th"],
+  html[lang="en"] [data-lang="en"] { display: block; }
+  html[lang="th"] span[data-lang="th"],
+  html[lang="en"] span[data-lang="en"] { display: inline; }
+  html[lang="th"] .cta-row [data-lang="th"],
+  html[lang="en"] .cta-row [data-lang="en"],
+  html[lang="th"] .feature [data-lang="th"],
+  html[lang="en"] .feature [data-lang="en"],
+  html[lang="th"] .use-case [data-lang="th"],
+  html[lang="en"] .use-case [data-lang="en"],
+  html[lang="th"] .tech-item [data-lang="th"],
+  html[lang="en"] .tech-item [data-lang="en"],
+  html[lang="th"] li[data-lang="th"],
+  html[lang="en"] li[data-lang="en"] { display: block; }
+  html[lang="th"] .cmds [data-lang="th"],
+  html[lang="en"] .cmds [data-lang="en"] { display: block; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="crt">
-      <div class="titlebar">
-        <span>ALGOR · LEDGER</span>
-        <span class="muted">CRT AMBER · OFFLINE</span>
+    <nav>
+      <a class="logo" href="#">ALGOR·LEDGER <span>CRT AMBER</span></a>
+      <div class="right">
+        <div class="lang-switch">
+          <button type="button" id="btn-th" class="active" onclick="setLang('th')">TH</button>
+          <button type="button" id="btn-en" onclick="setLang('en')">EN</button>
+        </div>
+        <div class="links">
+          <a href="#about"><span data-lang="th">เกี่ยวกับ</span><span data-lang="en">About</span></a>
+          <a href="#features"><span data-lang="th">คุณสมบัติ</span><span data-lang="en">Features</span></a>
+          <a href="#commands"><span data-lang="th">คำสั่ง</span><span data-lang="en">Commands</span></a>
+          <a href="#howto"><span data-lang="th">วิธีใช้</span><span data-lang="en">How-to</span></a>
+          <a href="#start"><span data-lang="th">เริ่มใช้</span><span data-lang="en">Start</span></a>
+          <a href="https://github.com/nasmees/algor-ledger" target="_blank" rel="noopener">GitHub</a>
+        </div>
       </div>
-      <div class="screen">
-        <div class="logo glow">ALGOR LEDGER</div>
-        <div class="tagline">small computer · real books</div>
+    </nav>
 
-        <p class="status-line">
-          <span class="ok">SYSTEM READY</span>
-          · inventory · sales · receipts · encrypted vault
-        </p>
+    <header class="hero">
+      <div class="tag">V1 · CLI + GUI · OFFLINE · ENCRYPTED</div>
+      <h1>ALGOR LEDGER</h1>
+      <p class="subtitle">small computer · real books · CRT amber phosphor</p>
+      <p class="lead" data-lang="th">
+        ระบบบัญชี + สินค้าคงคลังสำหรับร้านเล็ก ในเบราว์เซอร์ —
+        ขาย สต็อก ใบเสร็จ รายงาน ไฟล์เข้ารหัสเดียว ไม่พึ่ง cloud
+      </p>
+      <p class="lead" data-lang="en">
+        Inventory and books for small shops in the browser —
+        sales, stock, receipts, reports, one encrypted vault. No cloud.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="algor-ledger.html">
+          <span data-lang="th">▶ เปิด ALGOR LEDGER</span>
+          <span data-lang="en">▶ Launch ALGOR LEDGER</span>
+        </a>
+        <a class="btn btn-ghost" href="algor-ledger.html" download="algor-ledger.html">
+          <span data-lang="th">ดาวน์โหลด HTML</span>
+          <span data-lang="en">Download HTML</span>
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/nasmees/algor-ledger" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </header>
 
-        <h1 class="glow">บัญชีร้านเล็ก แบบเทอร์มินัล</h1>
-        <p class="lead">
-          ระบบ <strong>สินค้าคงคลัง + ขาย + ใบเสร็จ</strong> สำหรับร้านค้าและบริษัทเล็ก
-          ทำงาน <strong>offline 100%</strong> ในเบราว์เซอร์ เข้ารหัสไฟล์เดียว
-          ไม่ต้อง cloud ไม่ต้องสมัครบัญชี
-        </p>
-
-        <div class="actions">
-          <a class="btn btn-primary" href="algor-ledger.html">เปิดระบบ / Launch</a>
-          <a class="btn btn-ghost" href="https://github.com/" id="repo-link">GitHub</a>
-          <a class="btn btn-ghost" href="algor-ledger.html" download="algor-ledger.html">ดาวน์โหลด HTML</a>
-        </div>
-
-        <div class="term glow">
-<span class="d">╔══════════════════════════════════════════╗</span>
-<span class="c">║          ALGOR LEDGER  v1.1              ║</span>
-<span class="c">║     small computer · real books          ║</span>
-<span class="c">║           CRT AMBER PHOSPHOR             ║</span>
-<span class="d">╚══════════════════════════════════════════╝</span>
-<span class="d"> </span>
-<span class="m">OWNER&gt;</span> <span class="c">MODE GUI</span>   <span class="d"># หรือ F7</span>
-<span class="m">OWNER&gt;</span> <span class="c">SALE</span>
-<span class="d">  A001 2 → END → cash → PRINT</span>
-        </div>
-
-        <div class="grid">
-          <div class="panel">
-            <h2>Features</h2>
-            <ul>
-              <li>CLI + GUI (F7) สไตล์ ERP ยุค midrange</li>
-              <li>สินค้า / สต็อก / ขาย / ซื้อ</li>
-              <li>ใบเสร็จ 80mm + พิมพ์อัตโนมัติ</li>
-              <li>รายงานรายวัน / เดือน / กำไรขั้นต้น</li>
-              <li>ไฟล์ .vault เข้ารหัส AES-256</li>
-            </ul>
-          </div>
-          <div class="panel">
-            <h2>Quick start</h2>
-            <ul>
-              <li>เปิด algor-ledger.html ใน Chrome/Edge</li>
-              <li>เลือกภาษา → MODE OWNER</li>
-              <li>SETPASS → SETNAME → ITEM ADD</li>
-              <li>SALE หรือกด F7 เข้า GUI</li>
-              <li>SAVE เพื่อได้ไฟล์ .vault</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="panel">
-          <h2>Design</h2>
-          <p>
-            UI ได้รับแรงบันดาลใจจาก IBM AS/400 / 5250 และจอ CRT ฟอสเฟอร์อำพัน
-            ที่ใช้กับเครื่องบัญชีสมัยก่อน — อ่านตัวเลขได้นาน เบา และอยู่ภายใต้การควบคุมของคุณ
-          </p>
-        </div>
-
-        <div class="footer">
-          <span>ALGOR LEDGER · offline · encrypted · no cloud</span>
-          <span>
-            <a href="algor-ledger.html">Launch</a>
-            ·
-            <a href="README.md">README</a>
-          </span>
-        </div>
+    <div class="preview" aria-hidden="true">
+      <div class="preview-bar">
+        <span><span class="dot">●</span> ALGOR LEDGER · OWNER</span>
+        <span>ร้านปากซอย · SEC</span>
+      </div>
+      <div class="preview-body">
+        <div class="dim">OWNER&gt; SETNAME ร้านปากซอย</div>
+        <div class="amber">ชื่อร้าน: ร้านปากซอย</div>
+        <br>
+        <div class="cmd">OWNER&gt; ITEM ADD A001 น้ำดื่ม ขวด 5 10 100</div>
+        <div class="dim">+ A001 น้ำดื่ม  @10.00  qty 100</div>
+        <br>
+        <div class="cmd">OWNER&gt; SALE A001 2</div>
+        <div class="dim">┌── ใบเสร็จ S-20260822-001 ──┐</div>
+        <div>│ น้ำดื่ม    2 x 10.00   20.00</div>
+        <div>│ TOTAL                    20.00</div>
+        <div class="dim">└────────────────────────────┘</div>
+        <br>
+        <div class="cmd">OWNER&gt; <span class="cursor"></span></div>
       </div>
     </div>
+
+    <section id="about">
+      <h2 data-lang="th">เกี่ยวกับ</h2>
+      <h2 data-lang="en">About</h2>
+      <div class="prose">
+        <div data-lang="th">
+          <p><strong>ALGOR LEDGER</strong> คือระบบบัญชีและสินค้าคงคลังแบบ local-first สำหรับร้านค้าและบริษัทเล็ก
+          UI เป็นเทอร์มินัลยุค midrange / AS/400 โทน CRT amber — อ่านตัวเลขได้นาน เบา และอยู่ภายใต้การควบคุมของคุณ</p>
+          <p>ต่อยอดแนวคิด “คอมพิวเตอร์เล็ก ความจำใหญ่” ของ ALGOR Brain Vault แต่โฟกัสที่งานร้าน —
+          สต็อก ขาย ซื้อ ใบเสร็จ รายงานรายวัน/เดือน และไฟล์ <code>.vault</code> ที่เข้ารหัสได้</p>
+          <div class="quote">“inventory · sales · receipts · real books · no cloud”</div>
+          <p>ทุกอย่างรันในเบราว์เซอร์ ข้อมูลไม่ออกจากเครื่องคุณ ดีกว่าต้องเช่า cloud สำหรับร้านเล็ก</p>
+        </div>
+        <div data-lang="en">
+          <p><strong>ALGOR LEDGER</strong> is a local-first inventory and ledger for small shops and companies.
+          The UI is a midrange / AS/400-style terminal in CRT amber phosphor — easy on the eyes, light, and under your control.</p>
+          <p>It continues the “small computer · big memory” idea of ALGOR Brain Vault, focused on shop work —
+          stock, sales, purchases, receipts, day/month reports, and an encrypted <code>.vault</code> file.</p>
+          <div class="quote">“inventory · sales · receipts · real books · no cloud”</div>
+          <p>Everything runs in the browser. Data stays on your device — better than renting cloud for a small shop.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2 data-lang="th">คุณสมบัติ</h2>
+      <h2 data-lang="en">Features</h2>
+      <div class="features">
+        <div class="feature">
+          <h3 data-lang="th">สินค้าคงคลัง</h3>
+          <h3 data-lang="en">Inventory</h3>
+          <p data-lang="th">เพิ่ม / แก้ / ค้นหา / ปรับสต็อก · แจ้งเตือนใกล้หมด · ต้นทุนและราคาขาย</p>
+          <p data-lang="en">Add / edit / search / stock adjust · low-stock alerts · cost and sell price</p>
+        </div>
+        <div class="feature">
+          <h3 data-lang="th">ขายและซื้อ</h3>
+          <h3 data-lang="en">Sales &amp; purchases</h3>
+          <p data-lang="th">บิล interactive หรือขายเร็ว · เงินสด / โอน / เครดิต · ตัดสต็อกอัตโนมัติ</p>
+          <p data-lang="en">Interactive or quick sale · cash / transfer / credit · auto stock deduct</p>
+        </div>
+        <div class="feature">
+          <h3 data-lang="th">ใบเสร็จ 80mm</h3>
+          <h3 data-lang="en">Receipts 80mm</h3>
+          <p data-lang="th">ชื่อร้าน ที่อยู่ โทร เลขผู้เสียภาษี · พิมพ์จากเบราว์เซอร์ · พิมพ์อัตโนมัติหลังขายได้</p>
+          <p data-lang="en">Store name, address, phone, tax ID · browser print · optional auto-print after sale</p>
+        </div>
+        <div class="feature">
+          <h3 data-lang="th">รายงาน</h3>
+          <h3 data-lang="en">Reports</h3>
+          <p data-lang="th">รายวัน / เดือน · ยอดขาย · ต้นทุนขาย · กำไรขั้นต้น · รายการธุรกรรม</p>
+          <p data-lang="en">Day / month · sales · COGS · gross profit · transaction list</p>
+        </div>
+        <div class="feature">
+          <h3 data-lang="th">CLI + GUI</h3>
+          <h3 data-lang="en">CLI + GUI</h3>
+          <p data-lang="th">เทอร์มินัลเต็มรูปแบบ หรือกด F7 เข้าหน้าต่างกราฟิก (ขาย / สินค้า / รายงาน / ระบบ)</p>
+          <p data-lang="en">Full terminal or press F7 for graphical UI (sale / items / report / system)</p>
+        </div>
+        <div class="feature">
+          <h3 data-lang="th">เข้ารหัส offline</h3>
+          <h3 data-lang="en">Encrypted offline</h3>
+          <p data-lang="th">ไฟล์ .vault · AES-256-GCM · ไม่มีเซิร์ฟเวอร์ · copy ไปเครื่องอื่นได้</p>
+          <p data-lang="en">.vault file · AES-256-GCM · no server · copy to another machine</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="usecases">
+      <h2 data-lang="th">เหมาะกับใคร</h2>
+      <h2 data-lang="en">Who it is for</h2>
+      <div class="use-cases">
+        <div class="use-case">
+          <h3 data-lang="th">ร้านโชห่วย / ปากซอย</h3>
+          <h3 data-lang="en">Corner shops</h3>
+          <p data-lang="th">ขายเร็ว พิมพ์ใบเสร็จ รู้ยอดวันโดยไม่ต้องสมัคร cloud</p>
+          <p data-lang="en">Quick sales, receipts, daily totals without a cloud subscription</p>
+        </div>
+        <div class="use-case">
+          <h3 data-lang="th">บริษัทเล็ก / คลังย่อย</h3>
+          <h3 data-lang="en">Small firms / sub-stores</h3>
+          <p data-lang="th">คุมสต็อกและต้นทุนแบบไฟล์เดียว พกพาได้</p>
+          <p data-lang="en">Track stock and cost in one portable file</p>
+        </div>
+        <div class="use-case">
+          <h3 data-lang="th">ชอบเทอร์มินัล</h3>
+          <h3 data-lang="en">Terminal lovers</h3>
+          <p data-lang="th">งานบัญชีด้วยคำสั่ง — เร็วและชัด เหมือนเครื่องยุคก่อน</p>
+          <p data-lang="en">Bookkeeping by command — fast and clear, like legacy systems</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="commands">
+      <h2 data-lang="th">คำสั่งหลัก</h2>
+      <h2 data-lang="en">Main commands</h2>
+      <div class="cmds">
+        <div data-lang="th">
+          <div class="row"><span class="k">MODE OWNER|STAFF|GUI</span><span class="v">โหมดเจ้าของ / พนักงาน / หน้าต่างกราฟิก</span></div>
+          <div class="row"><span class="k">SETNAME · SETADDR · SETPHONE</span><span class="v">ชื่อร้าน ที่อยู่ โทร (บนใบเสร็จ)</span></div>
+          <div class="row"><span class="k">SETTAXID · SETFOOTER · SETPRINT</span><span class="v">เลขผู้เสียภาษี · ท้ายใบ · พิมพ์อัตโนมัติ</span></div>
+          <div class="row"><span class="k">ITEM ADD / LIST / SEARCH</span><span class="v">เพิ่ม · รายการ · ค้นหาสินค้า</span></div>
+          <div class="row"><span class="k">STOCK IN|OUT|SET</span><span class="v">ปรับสต็อก</span></div>
+          <div class="row"><span class="k">SALE · BUY</span><span class="v">ขาย / ซื้อ (interactive หรือเร็ว)</span></div>
+          <div class="row"><span class="k">RECEIPT · PRINT · REPRINT</span><span class="v">ดู / พิมพ์ / พิมพ์ซ้ำใบเสร็จ</span></div>
+          <div class="row"><span class="k">REPORT DAY|MONTH</span><span class="v">รายงานวันนี้ / เดือนนี้</span></div>
+          <div class="row"><span class="k">LOAD · SAVE · SAVERO · LOCK</span><span class="v">โหลด · บันทึก · อ่านอย่างเดียว · ล็อก</span></div>
+        </div>
+        <div data-lang="en">
+          <div class="row"><span class="k">MODE OWNER|STAFF|GUI</span><span class="v">Owner / staff / graphical UI</span></div>
+          <div class="row"><span class="k">SETNAME · SETADDR · SETPHONE</span><span class="v">Store name, address, phone on receipt</span></div>
+          <div class="row"><span class="k">SETTAXID · SETFOOTER · SETPRINT</span><span class="v">Tax ID · footer · auto-print</span></div>
+          <div class="row"><span class="k">ITEM ADD / LIST / SEARCH</span><span class="v">Add · list · search items</span></div>
+          <div class="row"><span class="k">STOCK IN|OUT|SET</span><span class="v">Adjust stock</span></div>
+          <div class="row"><span class="k">SALE · BUY</span><span class="v">Sell / buy (interactive or quick)</span></div>
+          <div class="row"><span class="k">RECEIPT · PRINT · REPRINT</span><span class="v">View / print / reprint receipt</span></div>
+          <div class="row"><span class="k">REPORT DAY|MONTH</span><span class="v">Today / this month report</span></div>
+          <div class="row"><span class="k">LOAD · SAVE · SAVERO · LOCK</span><span class="v">Load · save · read-only · lock</span></div>
+        </div>
+      </div>
+      <p style="margin-top:12px;font-size:13px;color:var(--muted);font-family:'IBM Plex Mono',monospace;">
+        HELP · MENU · F7 GUI · F8 SALE · F9 REPORT
+      </p>
+    </section>
+
+    <section id="howto">
+      <h2 data-lang="th">วิธีใช้ (ตัวอย่าง)</h2>
+      <h2 data-lang="en">How to use (examples)</h2>
+      <div class="prose">
+        <div data-lang="th">
+          <p><strong>1) ตั้งร้านและสินค้า</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            MODE OWNER<br>
+            SETPASS your-password<br>
+            SETNAME ร้านปากซอย<br>
+            SETADDR 88 ซอยสุขใจ กรุงเทพ<br>
+            SETPHONE 02-123-4567<br>
+            ITEM ADD A001 น้ำดื่ม600ml ขวด 5 10 100<br>
+            ITEM LIST
+          </p>
+
+          <p><strong>2) ขายและพิมพ์ใบเสร็จ</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            SALE A001 2<br>
+            END<br>
+            cash<br>
+            RECEIPT<br>
+            PRINT<br>
+            SETPRINT ON
+          </p>
+          <p style="color:var(--muted);font-size:14px;">SETPRINT ON = พิมพ์อัตโนมัติหลังขายทุกบิล · กระดาษม้วน ~80mm เลือกในไดอะล็อกพิมพ์</p>
+
+          <p><strong>3) รายงานและสต็อก</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            REPORT DAY<br>
+            REPORT MONTH<br>
+            LOWSTOCK<br>
+            STOCK IN A001 50<br>
+            TXN LIST
+          </p>
+
+          <p><strong>4) โหมด GUI และบันทึกไฟล์</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            MODE GUI<br>
+            # หรือกด F7<br>
+            SAVE<br>
+            LOAD
+          </p>
+          <p style="color:var(--muted);font-size:14px;">SAVE ได้ไฟล์ .vault เข้ารหัส · ย้ายเครื่อง: copy algor-ledger.html + ไฟล์ .vault</p>
+        </div>
+        <div data-lang="en">
+          <p><strong>1) Set up store and items</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            MODE OWNER<br>
+            SETPASS your-password<br>
+            SETNAME My Shop<br>
+            SETADDR 88 Happy Alley<br>
+            ITEM ADD A001 Water 600ml bottle 5 10 100<br>
+            ITEM LIST
+          </p>
+
+          <p><strong>2) Sell and print receipt</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            SALE A001 2<br>
+            END<br>
+            cash<br>
+            RECEIPT · PRINT<br>
+            SETPRINT ON
+          </p>
+          <p style="color:var(--muted);font-size:14px;">SETPRINT ON auto-prints after every sale · choose ~80mm roll in the print dialog</p>
+
+          <p><strong>3) Reports and stock</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            REPORT DAY · REPORT MONTH · LOWSTOCK · STOCK IN A001 50
+          </p>
+
+          <p><strong>4) GUI and vault file</strong></p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bright);">
+            MODE GUI · F7 · SAVE · LOAD
+          </p>
+          <p style="color:var(--muted);font-size:14px;">SAVE creates an encrypted .vault · move machines with html + vault together</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tech">
+      <h2 data-lang="th">เทคโนโลยีเบื้องหลัง</h2>
+      <h2 data-lang="en">Technology</h2>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <div class="label">RUNTIME</div>
+          <div class="value" data-lang="th">HTML + CSS + JavaScript ล้วน ไม่มี framework</div>
+          <div class="value" data-lang="en">Plain HTML + CSS + JavaScript, no framework</div>
+        </div>
+        <div class="tech-item">
+          <div class="label">CRYPTO</div>
+          <div class="value">Web Crypto · AES-256-GCM · PBKDF2-SHA-256 (120k)</div>
+        </div>
+        <div class="tech-item">
+          <div class="label">UI</div>
+          <div class="value" data-lang="th">CRT amber terminal · IBM Plex Mono · F7 GUI</div>
+          <div class="value" data-lang="en">CRT amber terminal · IBM Plex Mono · F7 GUI</div>
+        </div>
+        <div class="tech-item">
+          <div class="label">STORAGE</div>
+          <div class="value" data-lang="th">ไฟล์ .vault เข้ารหัส + ดาวน์โหลด/อัปโหลดในเบราว์เซอร์</div>
+          <div class="value" data-lang="en">Encrypted .vault + browser download/upload</div>
+        </div>
+        <div class="tech-item">
+          <div class="label">PRINT</div>
+          <div class="value" data-lang="th">ใบเสร็จ 80mm · window.print · fallback iframe</div>
+          <div class="value" data-lang="en">80mm receipt · window.print · iframe fallback</div>
+        </div>
+        <div class="tech-item">
+          <div class="label">PRIVACY</div>
+          <div class="value" data-lang="th">ไม่มี telemetry · ข้อมูลอยู่เครื่องคุณ</div>
+          <div class="value" data-lang="en">No telemetry · data stays on your device</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="start">
+      <h2 data-lang="th">เริ่มใช้งาน</h2>
+      <h2 data-lang="en">Quick start</h2>
+      <ol class="steps">
+        <li data-lang="th">กด <strong>เปิด ALGOR LEDGER</strong> (หรือเปิด <code>algor-ledger.html</code>)</li>
+        <li data-lang="en">Click <strong>Launch ALGOR LEDGER</strong> (or open <code>algor-ledger.html</code>)</li>
+        <li data-lang="th">เลือกภาษา — <code>1</code> ไทย / <code>2</code> English</li>
+        <li data-lang="en">Choose language — <code>1</code> Thai / <code>2</code> English</li>
+        <li data-lang="th">พิมพ์ <code>MODE OWNER</code> แล้ว <code>SETPASS</code> · <code>SETNAME</code></li>
+        <li data-lang="en">Type <code>MODE OWNER</code> then <code>SETPASS</code> · <code>SETNAME</code></li>
+        <li data-lang="th"><code>ITEM ADD ...</code> แล้วลอง <code>SALE</code> หรือกด <code>F7</code> เข้า GUI</li>
+        <li data-lang="en"><code>ITEM ADD ...</code> then try <code>SALE</code> or press <code>F7</code> for GUI</li>
+        <li data-lang="th">พิมพ์ <code>SAVE</code> เพื่อได้ไฟล์ <code>.vault</code> เข้ารหัส</li>
+        <li data-lang="en">Type <code>SAVE</code> to get an encrypted <code>.vault</code> file</li>
+        <li data-lang="th">ครั้งถัดไป <code>LOAD</code> แล้วใส่รหัสผ่าน</li>
+        <li data-lang="en">Next time <code>LOAD</code> and enter the password</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 data-lang="th">ความปลอดภัย</h2>
+      <h2 data-lang="en">Security</h2>
+      <div class="security">
+        <p style="font-family:'IBM Plex Mono',monospace;color:var(--phosphor);margin-bottom:8px;font-size:13px;">
+          AES-256-GCM · PBKDF2 120k rounds · Web Crypto API
+        </p>
+        <ul data-lang="th">
+          <li>รหัสผ่านไม่ถูกเขียนลงดิสก์ — ต้องใส่ทุกครั้งที่ LOAD</li>
+          <li>ลืมรหัสผ่าน = กู้ไฟล์ .vault ไม่ได้</li>
+          <li><code>LOCK</code> ล้างรหัสออกจากหน่วยความจำเมื่อเดินจากเครื่อง</li>
+          <li><code>SAVERO</code> สร้างไฟล์ที่เปิดได้แค่โหมดดู</li>
+          <li>รันออฟไลน์ได้หลังโหลดหน้า (ฟอนต์อาจต้องเน็ตครั้งแรก)</li>
+        </ul>
+        <ul data-lang="en">
+          <li>Password is never written to disk — required on every LOAD</li>
+          <li>Lost password = .vault cannot be recovered</li>
+          <li><code>LOCK</code> clears the password from memory when you step away</li>
+          <li><code>SAVERO</code> creates a read-only vault file</li>
+          <li>Works offline after load (fonts may need network on first visit)</li>
+        </ul>
+        <div class="notice" data-lang="th">
+          <strong>ขอบเขต:</strong> ร้านเดียว · ไม่คำนวณภาษีอัตโนมัติ · เหมาะกับบัญชีง่ายของร้านเล็ก
+          ไม่ใช่ระบบ ERP ขนาดใหญ่
+        </div>
+        <div class="notice" data-lang="en">
+          <strong>Scope:</strong> Single store · no automatic tax · for simple small-shop books,
+          not a full enterprise ERP.
+        </div>
+      </div>
+    </section>
+
+    <section style="text-align:center;margin-bottom:36px;">
+      <a class="btn btn-primary" href="algor-ledger.html">
+        <span data-lang="th">▶ เปิด ALGOR LEDGER ตอนนี้</span>
+        <span data-lang="en">▶ Launch ALGOR LEDGER now</span>
+      </a>
+    </section>
+
+    <footer>
+      <p>ALGOR LEDGER · small computer · real books · CRT amber</p>
+      <p style="margin-top:8px;">
+        <a href="https://github.com/nasmees/algor-ledger">github.com/nasmees/algor-ledger</a>
+      </p>
+      <p style="margin-top:6px;">Use freely for personal and small-shop work</p>
+    </footer>
   </div>
-  <script>
-    // If hosted on github.io, point repo link to inferred owner/repo
-    (function () {
-      var host = location.hostname || "";
-      var link = document.getElementById("repo-link");
-      if (!link) return;
-      if (host.endsWith("github.io")) {
-        var parts = host.replace(".github.io", "").split(".");
-        var user = parts[0];
-        var path = (location.pathname || "/").split("/").filter(Boolean);
-        var repo = path[0] || "algor-ledger";
-        link.href = "https://github.com/" + user + "/" + repo;
-      } else {
-        link.href = "https://github.com/search?q=algor+ledger";
-      }
-    })();
-  </script>
+
+<script>
+function setLang(lang) {
+  document.documentElement.lang = lang;
+  document.getElementById('btn-th').classList.toggle('active', lang === 'th');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  try { localStorage.setItem('ledger_landing_lang', lang); } catch (e) {}
+}
+(function () {
+  let lang = 'th';
+  try {
+    const saved = localStorage.getItem('ledger_landing_lang');
+    if (saved === 'en' || saved === 'th') lang = saved;
+    else if ((navigator.language || '').toLowerCase().startsWith('en')) lang = 'en';
+  } catch (e) {}
+  setLang(lang);
+})();
+</script>
 </body>
 </html>
