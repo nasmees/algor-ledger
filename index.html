@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALGOR LEDGER — small computer · real books</title>
+<meta name="description" content="ระบบบัญชี + สินค้าคงคลังแบบ CLI/GUI สำหรับร้านเล็ก Offline 100% เข้ารหัส ไม่พึ่ง cloud — CRT amber terminal">
+<meta name="theme-color" content="#100a04">
+<meta property="og:title" content="ALGOR LEDGER">
+<meta property="og:description" content="small computer · real books — offline ledger for small shops">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23100a04'/%3E%3Crect x='3' y='3' width='26' height='26' rx='2' fill='none' stroke='%23ffb000' stroke-width='1.5'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='monospace' font-size='14' font-weight='700' fill='%23ffb000'%3EAL%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #100a04;
+    --panel: #160e06;
+    --bezel: #1a1208;
+    --phosphor: #ffb000;
+    --bright: #ffd27a;
+    --dim: #8a5a12;
+    --dark: #3d2808;
+    --warn: #ff9f1a;
+    --error: #ff6a3d;
+    --menu: #e8c36a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--phosphor);
+    font-family: "IBM Plex Mono", "Courier New", monospace;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.18) 2px,
+      rgba(0, 0, 0, 0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.45) 100%);
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 18px 64px;
+  }
+
+  .crt {
+    background: var(--panel);
+    border: 2px solid var(--dark);
+    border-radius: 14px;
+    box-shadow:
+      0 0 0 1px var(--dim),
+      0 0 40px rgba(255, 176, 0, 0.12),
+      inset 0 0 60px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .titlebar {
+    background: var(--phosphor);
+    color: var(--bg);
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .titlebar span.muted { opacity: 0.7; font-weight: 500; }
+
+  .screen { padding: 28px 22px 32px; }
+
+  .glow {
+    text-shadow: 0 0 6px rgba(255, 176, 0, 0.45), 0 0 18px rgba(255, 176, 0, 0.15);
+  }
+
+  .logo {
+    color: var(--bright);
+    font-weight: 600;
+    font-size: clamp(1.1rem, 3vw, 1.35rem);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .tagline {
+    color: var(--dim);
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 4vw, 1.85rem);
+    color: var(--bright);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .lead {
+    color: var(--phosphor);
+    max-width: 38em;
+    margin-bottom: 24px;
+  }
+  .lead strong { color: var(--bright); }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-decoration: none;
+    border: 2px solid var(--phosphor);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .btn-primary {
+    background: var(--phosphor);
+    color: var(--bg);
+    border-color: var(--bright);
+  }
+  .btn-primary:hover {
+    background: var(--bright);
+    color: var(--bg);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--phosphor);
+  }
+  .btn-ghost:hover {
+    background: var(--bezel);
+    border-color: var(--bright);
+    color: var(--bright);
+  }
+
+  .panel {
+    border: 1px solid var(--dark);
+    background: #0c0804;
+    padding: 16px 16px 14px;
+    margin-bottom: 14px;
+  }
+  .panel h2 {
+    font-size: 13px;
+    color: var(--menu);
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .panel p, .panel li {
+    color: var(--phosphor);
+    font-size: 13px;
+  }
+  .panel ul {
+    list-style: none;
+    padding: 0;
+  }
+  .panel li {
+    padding: 4px 0 4px 14px;
+    position: relative;
+  }
+  .panel li::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: var(--dim);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .term {
+    background: #000;
+    border: 2px solid var(--dark);
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--phosphor);
+    overflow-x: auto;
+    margin-bottom: 14px;
+  }
+  .term .c { color: var(--bright); }
+  .term .d { color: var(--dim); }
+  .term .m { color: var(--menu); }
+  .term .w { color: var(--warn); }
+
+  .footer {
+    margin-top: 22px;
+    padding-top: 14px;
+    border-top: 1px solid var(--dark);
+    font-size: 12px;
+    color: var(--dim);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    justify-content: space-between;
+  }
+  .footer a {
+    color: var(--menu);
+    text-decoration: none;
+  }
+  .footer a:hover { color: var(--bright); text-decoration: underline; }
+
+  .status-line {
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 18px;
+  }
+  .status-line .ok { color: var(--phosphor); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="crt">
+      <div class="titlebar">
+        <span>ALGOR · LEDGER</span>
+        <span class="muted">CRT AMBER · OFFLINE</span>
+      </div>
+      <div class="screen">
+        <div class="logo glow">ALGOR LEDGER</div>
+        <div class="tagline">small computer · real books</div>
+
+        <p class="status-line">
+          <span class="ok">SYSTEM READY</span>
+          · inventory · sales · receipts · encrypted vault
+        </p>
+
+        <h1 class="glow">บัญชีร้านเล็ก แบบเทอร์มินัล</h1>
+        <p class="lead">
+          ระบบ <strong>สินค้าคงคลัง + ขาย + ใบเสร็จ</strong> สำหรับร้านค้าและบริษัทเล็ก
+          ทำงาน <strong>offline 100%</strong> ในเบราว์เซอร์ เข้ารหัสไฟล์เดียว
+          ไม่ต้อง cloud ไม่ต้องสมัครบัญชี
+        </p>
+
+        <div class="actions">
+          <a class="btn btn-primary" href="algor-ledger.html">เปิดระบบ / Launch</a>
+          <a class="btn btn-ghost" href="https://github.com/" id="repo-link">GitHub</a>
+          <a class="btn btn-ghost" href="algor-ledger.html" download="algor-ledger.html">ดาวน์โหลด HTML</a>
+        </div>
+
+        <div class="term glow">
+<span class="d">╔══════════════════════════════════════════╗</span>
+<span class="c">║          ALGOR LEDGER  v1.1              ║</span>
+<span class="c">║     small computer · real books          ║</span>
+<span class="c">║           CRT AMBER PHOSPHOR             ║</span>
+<span class="d">╚══════════════════════════════════════════╝</span>
+<span class="d"> </span>
+<span class="m">OWNER&gt;</span> <span class="c">MODE GUI</span>   <span class="d"># หรือ F7</span>
+<span class="m">OWNER&gt;</span> <span class="c">SALE</span>
+<span class="d">  A001 2 → END → cash → PRINT</span>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h2>Features</h2>
+            <ul>
+              <li>CLI + GUI (F7) สไตล์ ERP ยุค midrange</li>
+              <li>สินค้า / สต็อก / ขาย / ซื้อ</li>
+              <li>ใบเสร็จ 80mm + พิมพ์อัตโนมัติ</li>
+              <li>รายงานรายวัน / เดือน / กำไรขั้นต้น</li>
+              <li>ไฟล์ .vault เข้ารหัส AES-256</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h2>Quick start</h2>
+            <ul>
+              <li>เปิด algor-ledger.html ใน Chrome/Edge</li>
+              <li>เลือกภาษา → MODE OWNER</li>
+              <li>SETPASS → SETNAME → ITEM ADD</li>
+              <li>SALE หรือกด F7 เข้า GUI</li>
+              <li>SAVE เพื่อได้ไฟล์ .vault</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Design</h2>
+          <p>
+            UI ได้รับแรงบันดาลใจจาก IBM AS/400 / 5250 และจอ CRT ฟอสเฟอร์อำพัน
+            ที่ใช้กับเครื่องบัญชีสมัยก่อน — อ่านตัวเลขได้นาน เบา และอยู่ภายใต้การควบคุมของคุณ
+          </p>
+        </div>
+
+        <div class="footer">
+          <span>ALGOR LEDGER · offline · encrypted · no cloud</span>
+          <span>
+            <a href="algor-ledger.html">Launch</a>
+            ·
+            <a href="README.md">README</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // If hosted on github.io, point repo link to inferred owner/repo
+    (function () {
+      var host = location.hostname || "";
+      var link = document.getElementById("repo-link");
+      if (!link) return;
+      if (host.endsWith("github.io")) {
+        var parts = host.replace(".github.io", "").split(".");
+        var user = parts[0];
+        var path = (location.pathname || "/").split("/").filter(Boolean);
+        var repo = path[0] || "algor-ledger";
+        link.href = "https://github.com/" + user + "/" + repo;
+      } else {
+        link.href = "https://github.com/search?q=algor+ledger";
+      }
+    })();
+  </script>
+</body>
+</html>

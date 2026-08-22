@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALGOR // LEDGER</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  :root {
+    --green: #ffb000;
+    --green-bright: #ffd27a;
+    --green-dim: #8a5a12;
+    --green-dark: #3d2808;
+    --bg: #100a04;
+    --amber: #ff9f1a;
+    --cyan: #e8c36a;
+    --red: #ff6a3d;
+    --blue: #e8c36a;
+    --panel: #160e06;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%; background: var(--bg); color: var(--green);
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 14px; line-height: 1.4; overflow: hidden;
+  }
+  body { display: flex; flex-direction: column; }
+  #topbar {
+    background: var(--panel); border-bottom: 2px solid var(--green);
+    padding: 5px 12px; display: flex; justify-content: space-between;
+    align-items: center; font-size: 13px; font-weight: 500; flex-shrink: 0;
+  }
+  #topbar .sysname { color: var(--green-bright); letter-spacing: 1.5px; font-weight: 600; }
+  #topbar .info { color: var(--green); }
+  #topbar .mode-tag {
+    background: var(--green); color: #000; padding: 2px 10px; font-weight: 600;
+    border-radius: 2px;
+  }
+  #topbar .clock { color: var(--green-dim); margin-left: 12px; }
+  #screen {
+    flex: 1; display: flex; flex-direction: column; min-height: 0;
+    border-left: 2px solid var(--green-dark); border-right: 2px solid var(--green-dark);
+  }
+  #terminal {
+    flex: 1; overflow-y: auto; padding: 12px 16px; background: var(--bg);
+    scrollbar-width: thin; scrollbar-color: var(--green-dim) var(--bg);
+  }
+  #terminal::-webkit-scrollbar { width: 8px; }
+  #terminal::-webkit-scrollbar-track { background: #001100; }
+  #terminal::-webkit-scrollbar-thumb { background: var(--green-dim); }
+  .line { margin-bottom: 2px; white-space: pre-wrap; word-break: break-word; }
+  .line.system { color: var(--green-dim); }
+  .line.error { color: var(--red); }
+  .line.warn { color: var(--amber); }
+  .line.user { color: var(--green-bright); }
+  .line.out { color: var(--green); }
+  .line.menu { color: var(--cyan); }
+  .line.logo { color: var(--green-bright); font-weight: 600; }
+  .line.money { color: var(--amber); }
+  .line.header { color: var(--cyan); font-weight: 500; }
+  #cmdline {
+    border-top: 2px solid var(--green); background: var(--panel);
+    padding: 7px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  #prompt-label { color: var(--green-bright); font-weight: 600; white-space: nowrap; }
+  #cmd {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--green-bright); font-family: inherit; font-size: 14px; caret-color: var(--green);
+  }
+  #cmd::placeholder { color: var(--green-dark); }
+  #fkeybar {
+    background: var(--panel); border-top: 1px solid var(--green-dim);
+    padding: 5px 10px; display: flex; flex-wrap: wrap; gap: 2px 14px;
+    font-size: 12px; color: var(--green); flex-shrink: 0;
+  }
+  #fkeybar .fk { color: var(--amber); font-weight: 600; }
+  #file-input, #import-input { display: none; }
+  body::after {
+    content: ""; position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+    pointer-events: none; z-index: 50;
+  }
+
+  /* ===== RETRO GUI MODE ===== */
+  #gui-root {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--panel);
+    border-left: 2px solid var(--green-dark);
+    border-right: 2px solid var(--green-dark);
+    color: var(--green);
+  }
+  body.gui-on #screen,
+  body.gui-on #cmdline { display: none; }
+  body.gui-on #gui-root { display: flex; }
+
+  .gui-titlebar {
+    background: var(--green);
+    color: #100a04;
+    padding: 6px 10px;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.5px;
+  }
+  .gui-titlebar button {
+    font-family: inherit; font-size: 11px; font-weight: 600;
+    background: #100a04; color: var(--green);
+    border: 1px solid #000; padding: 3px 12px; cursor: pointer;
+  }
+  .gui-titlebar button:hover { background: var(--green-dark); }
+
+  .gui-tabs {
+    display: flex; background: #0c0804; border-bottom: 2px solid var(--green-dim);
+    flex-wrap: wrap;
+  }
+  .gui-tab {
+    font-family: inherit; font-size: 12px; padding: 8px 14px;
+    background: transparent; color: var(--green-dim);
+    border: none; border-right: 1px solid var(--green-dark); cursor: pointer;
+  }
+  .gui-tab.active {
+    background: var(--panel); color: var(--green-bright); font-weight: 600;
+    border-bottom: 2px solid var(--green); margin-bottom: -2px;
+  }
+
+  .gui-body { flex: 1; overflow: auto; padding: 12px; min-height: 0; }
+  .gui-panel { display: none; }
+  .gui-panel.active { display: block; }
+
+  .gui-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .gui-label { font-size: 12px; color: var(--green-dim); margin-bottom: 4px; }
+  .gui-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .gui-grid2 { grid-template-columns: 1fr; } }
+
+  .gui-input, .gui-textarea, .gui-select {
+    font-family: inherit; font-size: 13px;
+    background: #000; color: var(--green-bright);
+    border: 2px solid var(--green-dim);
+    padding: 6px 8px; outline: none;
+  }
+  .gui-input, .gui-select { min-height: 36px; }
+  .gui-input:focus, .gui-textarea:focus, .gui-select:focus { border-color: var(--green); }
+  .gui-select { width: 100%; min-height: 160px; }
+  .gui-input.flex1 { flex: 1; min-width: 100px; }
+
+  .gui-btn {
+    font-family: inherit; font-size: 12px; font-weight: 600;
+    background: #1a1006; color: var(--green);
+    border: 2px outset var(--green);
+    padding: 7px 14px; cursor: pointer;
+    letter-spacing: 0.3px;
+    min-height: 36px;
+  }
+  .gui-btn:active { border-style: inset; }
+  .gui-btn:hover { background: #2a1a08; }
+  .gui-btn.primary { background: var(--green); color: #100a04; border-color: var(--green-bright); }
+  .gui-btn.primary:hover { background: var(--green-bright); }
+  .gui-btn.danger { color: var(--red); border-color: #994433; }
+
+  .gui-out {
+    background: #000; border: 2px solid var(--green-dark);
+    padding: 10px; min-height: 72px; max-height: 240px; overflow: auto;
+    font-size: 13px; white-space: pre-wrap; word-break: break-word;
+    color: var(--green);
+  }
+  .gui-status {
+    border-top: 1px solid var(--green-dark);
+    padding: 4px 10px; font-size: 11px; color: var(--green-dim);
+    background: #0c0804;
+  }
+  .gui-hint { font-size: 11px; color: var(--green-dim); margin-top: 6px; }
+  .gui-table {
+    width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px;
+  }
+  .gui-table th, .gui-table td {
+    border: 1px solid var(--green-dark); padding: 5px 8px; text-align: left;
+  }
+  .gui-table th { color: var(--cyan); background: #0c0804; }
+  .gui-table td.num { text-align: right; color: var(--amber); }
+  .gui-cart-total { font-size: 16px; color: var(--amber); font-weight: 600; margin: 8px 0; }
+</style>
+</head>
+<body>
+  <div id="topbar">
+    <div class="info">
+      <span class="sysname">ALGOR LEDGER</span>
+      <span id="vault-status"> | NO STORE</span>
+    </div>
+    <div class="info">
+      <span class="mode-tag" id="mode-display">BOOT</span>
+      <span class="clock" id="clock"></span>
+    </div>
+  </div>
+  <div id="screen"><div id="terminal"></div></div>
+  <div id="cmdline">
+    <span id="prompt-label">===&gt;</span>
+    <input type="text" id="cmd" autocomplete="off" spellcheck="false" placeholder="">
+  </div>
+  <div id="fkeybar">
+    <span><span class="fk">F1</span>=Help</span>
+    <span><span class="fk">F2</span>=Menu</span>
+    <span><span class="fk">F5</span>=Status</span>
+    <span><span class="fk">F6</span>=Items</span>
+    <span><span class="fk">F7</span>=GUI</span>
+    <span><span class="fk">F8</span>=Sale</span>
+    <span><span class="fk">F9</span>=Report</span>
+    <span><span class="fk">F10</span>=Lock</span>
+    <span><span class="fk">F12</span>=Cancel</span>
+  </div>
+
+  <div id="gui-root">
+    <div class="gui-titlebar">
+      <span>ALGOR LEDGER · Graphical Interface</span>
+      <button type="button" id="gui-to-cli">CLI Mode</button>
+    </div>
+    <div class="gui-tabs">
+      <button type="button" class="gui-tab active" data-tab="sale">Sale</button>
+      <button type="button" class="gui-tab" data-tab="items">Items</button>
+      <button type="button" class="gui-tab" data-tab="report">Report</button>
+      <button type="button" class="gui-tab" data-tab="system">System</button>
+    </div>
+    <div class="gui-body">
+      <!-- SALE -->
+      <div class="gui-panel active" id="gui-panel-sale">
+        <div class="gui-grid2">
+          <div>
+            <div class="gui-label">สินค้า / Items</div>
+            <select class="gui-select" id="gui-item-pick" size="10"></select>
+            <div class="gui-row" style="margin-top:8px">
+              <input class="gui-input" id="gui-sale-qty" type="number" min="1" value="1" style="width:80px" title="qty">
+              <button type="button" class="gui-btn primary" id="gui-add-cart">Add to cart</button>
+            </div>
+          </div>
+          <div>
+            <div class="gui-label">ตะกร้า / Cart</div>
+            <div class="gui-out" id="gui-cart" style="min-height:160px">—</div>
+            <div class="gui-cart-total" id="gui-cart-total">TOTAL: 0.00</div>
+            <div class="gui-row">
+              <select class="gui-input" id="gui-pay" style="width:140px">
+                <option value="cash">cash</option>
+                <option value="transfer">transfer</option>
+                <option value="credit">credit</option>
+              </select>
+              <button type="button" class="gui-btn primary" id="gui-checkout">Checkout</button>
+              <button type="button" class="gui-btn" id="gui-cart-clear">Clear</button>
+            </div>
+            <div class="gui-row">
+              <button type="button" class="gui-btn" id="gui-receipt-last">Receipt</button>
+              <button type="button" class="gui-btn" id="gui-print-last">Print</button>
+            </div>
+            <div class="gui-out" id="gui-sale-out" style="min-height:48px;margin-top:8px">—</div>
+          </div>
+        </div>
+        <p class="gui-hint">เลือกสินค้า → จำนวน → Add to cart → Checkout · F7 หรือ CLI Mode เพื่อกลับ</p>
+      </div>
+      <!-- ITEMS -->
+      <div class="gui-panel" id="gui-panel-items">
+        <div class="gui-label">รายการสินค้า</div>
+        <div class="gui-out" id="gui-items-list" style="max-height:200px">—</div>
+        <div class="gui-label" style="margin-top:12px">เพิ่มสินค้า / Add item</div>
+        <div class="gui-row">
+          <input class="gui-input" id="gui-icode" placeholder="code" style="width:90px">
+          <input class="gui-input flex1" id="gui-iname" placeholder="name">
+          <input class="gui-input" id="gui-iunit" placeholder="unit" style="width:70px">
+        </div>
+        <div class="gui-row">
+          <input class="gui-input" id="gui-icost" type="number" step="0.01" placeholder="cost" style="width:100px">
+          <input class="gui-input" id="gui-iprice" type="number" step="0.01" placeholder="price" style="width:100px">
+          <input class="gui-input" id="gui-iqty" type="number" placeholder="qty" style="width:80px">
+          <button type="button" class="gui-btn primary" id="gui-item-add">Add item</button>
+          <button type="button" class="gui-btn" id="gui-items-refresh">Refresh</button>
+        </div>
+        <div class="gui-out" id="gui-items-out" style="min-height:40px">—</div>
+      </div>
+      <!-- REPORT -->
+      <div class="gui-panel" id="gui-panel-report">
+        <div class="gui-row">
+          <button type="button" class="gui-btn primary" id="gui-rep-day">Today</button>
+          <button type="button" class="gui-btn" id="gui-rep-month">This month</button>
+          <button type="button" class="gui-btn" id="gui-rep-txn">Recent txns</button>
+          <button type="button" class="gui-btn" id="gui-rep-low">Low stock</button>
+        </div>
+        <div class="gui-out" id="gui-report-out" style="min-height:220px;max-height:360px">—</div>
+      </div>
+      <!-- SYSTEM -->
+      <div class="gui-panel" id="gui-panel-system">
+        <div class="gui-row">
+          <button type="button" class="gui-btn primary" id="gui-save-btn">Save vault</button>
+          <button type="button" class="gui-btn" id="gui-load-btn">Load vault</button>
+          <button type="button" class="gui-btn" id="gui-lock-btn">Lock</button>
+          <button type="button" class="gui-btn" id="gui-owner-btn">Owner mode</button>
+        </div>
+        <div class="gui-label" style="margin-top:12px">Password</div>
+        <div class="gui-row">
+          <input class="gui-input" id="gui-pass" type="password" placeholder="password" style="max-width:220px">
+          <button type="button" class="gui-btn" id="gui-setpass-btn">Set password</button>
+        </div>
+        <div class="gui-label" style="margin-top:12px">Store name / address</div>
+        <div class="gui-row">
+          <input class="gui-input" id="gui-vname" placeholder="store name" style="max-width:220px">
+          <button type="button" class="gui-btn" id="gui-setname-btn">Set name</button>
+        </div>
+        <div class="gui-row">
+          <input class="gui-input flex1" id="gui-vaddr" placeholder="address">
+          <button type="button" class="gui-btn" id="gui-setaddr-btn">Set address</button>
+        </div>
+        <div class="gui-row">
+          <input class="gui-input" id="gui-vphone" placeholder="phone" style="max-width:160px">
+          <input class="gui-input" id="gui-vtax" placeholder="tax id" style="max-width:160px">
+          <button type="button" class="gui-btn" id="gui-setcontact-btn">Set phone/tax</button>
+        </div>
+        <div class="gui-row">
+          <input class="gui-input flex1" id="gui-vfooter" placeholder="receipt footer text">
+          <button type="button" class="gui-btn" id="gui-setfooter-btn">Set footer</button>
+        </div>
+        <div class="gui-row">
+          <label style="color:var(--green);font-size:12px;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="gui-autoprint"> พิมพ์ใบเสร็จอัตโนมัติหลังขาย
+          </label>
+        </div>
+        <div class="gui-label" style="margin-top:12px">Status</div>
+        <div class="gui-out" id="gui-sys-out">—</div>
+        <div class="gui-row" style="margin-top:10px">
+          <button type="button" class="gui-btn" id="gui-status-btn">Refresh status</button>
+          <button type="button" class="gui-btn" id="gui-cli-btn2">Back to CLI</button>
+        </div>
+      </div>
+    </div>
+    <div class="gui-status" id="gui-statusbar">GUI ready</div>
+  </div>
+
+  <input type="file" id="file-input" accept=".vault,.json">
+  <input type="file" id="import-input" accept=".csv,.txt">
+
+<script>
+const TERM = document.getElementById('terminal');
+const CMD = document.getElementById('cmd');
+const PROMPT_LABEL = document.getElementById('prompt-label');
+const MODE_DISPLAY = document.getElementById('mode-display');
+const VAULT_STATUS = document.getElementById('vault-status');
+const FILE_INPUT = document.getElementById('file-input');
+const CLOCK = document.getElementById('clock');
+
+let LANG = localStorage.getItem('algor_ledger_lang') || null;
+let mode = 'BOOT';           // BOOT | OWNER | STAFF | VIEW
+let vault = null;
+let masterPassword = null;
+let dirty = false;
+let cmdHistory = [];
+let cmdHistIdx = -1;
+let wizard = null;           // interactive multi-step state
+let lastReceiptRef = null;
+
+// ---------- I18N ----------
+const I18N = {
+  th: {
+    prompt_owner: 'OWNER>',
+    prompt_staff: 'STAFF>',
+    prompt_view: 'VIEW>',
+    prompt_boot: '===>',
+    no_store: 'ยังไม่มีร้าน',
+    saved: 'บันทึก vault สำเร็จ',
+    loaded: 'โหลด vault สำเร็จ',
+    need_pass: 'ต้องตั้งรหัสผ่านก่อน (SETPASS)',
+    wrong_pass: 'รหัสผ่านไม่ถูกต้อง',
+    remember_pass: 'จำรหัสนี้ไว้ให้ดี ต้องใช้ตอน LOAD',
+    unknown_cmd: 'คำสั่งไม่รู้จัก — พิมพ์ MENU หรือ HELP',
+    no_data: 'ยังไม่มีข้อมูล',
+    readonly: 'vault นี้เป็น READ-ONLY',
+    unsaved: 'มีการเปลี่ยนแปลงที่ยังไม่ SAVE',
+    locked: 'ล็อกเซสชันแล้ว',
+    created: 'สร้างร้านใหม่แล้ว',
+    enter_pass: 'รหัสผ่าน vault:',
+    set_pass_ok: 'ตั้งรหัสผ่านแล้ว — อย่าลืม SAVE',
+    staff_denied: 'พนักงานทำคำสั่งนี้ไม่ได้',
+  },
+  en: {
+    prompt_owner: 'OWNER>',
+    prompt_staff: 'STAFF>',
+    prompt_view: 'VIEW>',
+    prompt_boot: '===>',
+    no_store: 'No store yet',
+    saved: 'Vault saved',
+    loaded: 'Vault loaded',
+    need_pass: 'Set password first (SETPASS)',
+    wrong_pass: 'Wrong password',
+    remember_pass: 'Remember this password. Needed on LOAD.',
+    unknown_cmd: 'Unknown command — type MENU or HELP',
+    no_data: 'No data yet',
+    readonly: 'This vault is READ-ONLY',
+    unsaved: 'Unsaved changes',
+    locked: 'Session locked',
+    created: 'New store created',
+    enter_pass: 'Vault password:',
+    set_pass_ok: 'Password set — remember to SAVE',
+    staff_denied: 'Staff cannot run this command',
+  }
+};
+function t(key) {
+  const d = I18N[LANG] || I18N.th;
+  return d[key] || key;
+}
+
+// ---------- Crypto (same as ALGOR Brain) ----------
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const km = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+async function encryptVault(obj, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(password, salt);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return {
+    version: 1, encrypted: true, type: 'algor-ledger',
+    salt: btoa(String.fromCharCode(...salt)),
+    iv: btoa(String.fromCharCode(...iv)),
+    data: btoa(String.fromCharCode(...new Uint8Array(ct)))
+  };
+}
+async function decryptVault(fileObj, password) {
+  if (!fileObj.encrypted) return fileObj;
+  const salt = Uint8Array.from(atob(fileObj.salt), c => c.charCodeAt(0));
+  const iv = Uint8Array.from(atob(fileObj.iv), c => c.charCodeAt(0));
+  const data = Uint8Array.from(atob(fileObj.data), c => c.charCodeAt(0));
+  const key = await deriveKey(password, salt);
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+// ---------- Utils ----------
+function now() { return new Date().toISOString().slice(0, 19).replace('T', ' '); }
+function today() { return new Date().toISOString().slice(0, 10); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function scrollBottom() { TERM.scrollTop = TERM.scrollHeight; }
+function print(text, cls = 'system') {
+  const div = document.createElement('div');
+  div.className = 'line ' + cls;
+  div.textContent = text;
+  TERM.appendChild(div);
+  scrollBottom();
+}
+function printLines(lines, cls = 'out') {
+  lines.forEach(l => print(l, cls));
+}
+function clearScreen() { TERM.innerHTML = ''; }
+function beep(ok = true) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = ok ? 880 : 220;
+    g.gain.value = 0.04;
+    o.start();
+    setTimeout(() => { o.stop(); ctx.close(); }, ok ? 80 : 150);
+  } catch (e) {}
+}
+function money(n) {
+  return Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function markDirty() { dirty = true; updateVaultStatus(); }
+function markClean() { dirty = false; updateVaultStatus(); }
+function isOwner() { return mode === 'OWNER'; }
+function isStaff() { return mode === 'STAFF' || mode === 'OWNER'; }
+function canEdit() { return mode === 'OWNER' && !vault?.meta?.readonly; }
+
+function createEmptyVault(name = 'MY_STORE') {
+  return {
+    version: 1,
+    type: 'algor-ledger',
+    name,
+    address: '',
+    phone: '',
+    taxId: '',
+    footer: '',
+    autoPrint: false,
+    created: now(),
+    updated: now(),
+    meta: { currency: 'THB', readonly: false },
+    items: [],
+    contacts: [],
+    txns: [],
+    seq: { sale: 1, purchase: 1, adjust: 1, expense: 1, income: 1 }
+  };
+}
+function ensureStoreFields() {
+  if (!vault) return;
+  if (vault.phone == null) vault.phone = '';
+  if (vault.taxId == null) vault.taxId = '';
+  if (vault.footer == null) vault.footer = '';
+  if (vault.autoPrint == null) vault.autoPrint = false;
+}
+
+function setMode(m) {
+  mode = m;
+  MODE_DISPLAY.textContent = m;
+  if (m === 'OWNER') {
+    PROMPT_LABEL.textContent = t('prompt_owner');
+    CMD.placeholder = 'MENU | ITEM | SALE | REPORT ...';
+  } else if (m === 'STAFF') {
+    PROMPT_LABEL.textContent = t('prompt_staff');
+    CMD.placeholder = 'SALE | ITEM LIST | RECEIPT ...';
+  } else if (m === 'VIEW') {
+    PROMPT_LABEL.textContent = t('prompt_view');
+    CMD.placeholder = 'REPORT | ITEM LIST | RECEIPT ...';
+  } else {
+    PROMPT_LABEL.textContent = t('prompt_boot');
+    CMD.placeholder = '1=OWNER  2=STAFF  3=LOAD  MENU';
+  }
+}
+
+function updateVaultStatus() {
+  if (!vault) {
+    VAULT_STATUS.textContent = ' | NO STORE';
+    return;
+  }
+  const items = vault.items?.filter(i => i.active !== false).length || 0;
+  const txns = vault.txns?.length || 0;
+  const lock = masterPassword ? ' [SEC]' : ' [LOCKED]';
+  const d = dirty ? ' *' : '';
+  const ro = vault.meta?.readonly ? ' [RO]' : '';
+  VAULT_STATUS.textContent = ` | ${vault.name}  ITM:${items} TXN:${txns}${lock}${ro}${d}`;
+}
+
+function updateClock() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  CLOCK.textContent = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function nextRef(type) {
+  const key = type === 'sale' ? 'sale' : type === 'purchase' ? 'purchase' :
+              type === 'adjust' ? 'adjust' : type === 'expense' ? 'expense' : 'income';
+  const n = vault.seq[key] || 1;
+  vault.seq[key] = n + 1;
+  const d = today().replace(/-/g, '');
+  const prefix = { sale: 'S', purchase: 'P', adjust: 'A', expense: 'E', income: 'I' }[key] || 'X';
+  return `${prefix}-${d}-${String(n).padStart(3, '0')}`;
+}
+
+function findItem(code) {
+  if (!vault?.items) return null;
+  const c = (code || '').toUpperCase();
+  return vault.items.find(i => i.code.toUpperCase() === c && i.active !== false);
+}
+function findItemAny(code) {
+  if (!vault?.items) return null;
+  const c = (code || '').toUpperCase();
+  return vault.items.find(i => i.code.toUpperCase() === c);
+}
+function findContact(code) {
+  if (!vault?.contacts) return null;
+  const c = (code || '').toUpperCase();
+  return vault.contacts.find(x => x.code.toUpperCase() === c);
+}
+function findTxn(ref) {
+  if (!vault?.txns) return null;
+  return vault.txns.find(t => t.ref.toUpperCase() === (ref || '').toUpperCase());
+}
+
+// ---------- File I/O ----------
+async function saveVaultFile(readonly = false) {
+  if (!vault) { print(t('no_store'), 'error'); beep(false); return; }
+  if (!masterPassword) { print(t('need_pass'), 'error'); beep(false); return; }
+  try {
+    vault.updated = now();
+    let payload = vault;
+    if (readonly) {
+      payload = JSON.parse(JSON.stringify(vault));
+      payload.meta = payload.meta || {};
+      payload.meta.readonly = true;
+    }
+    const encrypted = await encryptVault(payload, masterPassword);
+    const blob = new Blob([JSON.stringify(encrypted, null, 2)], { type: 'application/json' });
+    const name = (vault.name || 'store').replace(/[^\w\u0E00-\u0E7F-]/g, '_') + (readonly ? '_RO' : '') + '.vault';
+
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: name,
+          types: [{ description: 'ALGOR Vault', accept: { 'application/json': ['.vault'] } }]
+        });
+        const w = await handle.createWritable();
+        await w.write(blob);
+        await w.close();
+        markClean();
+        print(t('saved') + (readonly ? ' [READ-ONLY]' : ''), 'system');
+        beep(true);
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+    // fallback download
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    markClean();
+    print(t('saved') + (readonly ? ' [READ-ONLY]' : ''), 'system');
+    beep(true);
+  } catch (e) {
+    print('SAVE error: ' + e.message, 'error');
+    beep(false);
+  }
+}
+
+async function loadVaultFile() {
+  FILE_INPUT.value = '';
+  FILE_INPUT.onchange = async () => {
+    const file = FILE_INPUT.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const fileObj = JSON.parse(text);
+      const pass = prompt(t('enter_pass'));
+      if (pass === null) return;
+      const data = await decryptVault(fileObj, pass);
+      if (data.type && data.type !== 'algor-ledger') {
+        print(LANG === 'th' ? 'ไฟล์นี้ไม่ใช่ ALGOR LEDGER vault' : 'Not an ALGOR LEDGER vault', 'error');
+        beep(false);
+        return;
+      }
+      vault = data;
+      masterPassword = pass;
+      if (vault.meta?.readonly) {
+        setMode('VIEW');
+      } else {
+        setMode('OWNER');
+      }
+      markClean();
+      updateVaultStatus();
+      print(`${t('loaded')}: ${vault.name} (${vault.items?.length || 0} items, ${vault.txns?.length || 0} txns)`, 'system');
+      if (vault.meta?.readonly) print('[READ-ONLY]', 'warn');
+      beep(true);
+    } catch (e) {
+      print(t('wrong_pass') + ' / ' + e.message, 'error');
+      vault = null;
+      masterPassword = null;
+      updateVaultStatus();
+      beep(false);
+    }
+  };
+  FILE_INPUT.click();
+}
+
+// ---------- Receipt ----------
+function centerPad(s, W) {
+  const t = String(s || '').slice(0, W);
+  const left = Math.max(0, Math.floor((W - t.length) / 2));
+  return (' '.repeat(left) + t).padEnd(W);
+}
+function moneyPlain(n) {
+  return Number(n || 0).toFixed(2);
+}
+
+function buildReceiptText(txn) {
+  ensureStoreFields();
+  const store = vault.name || 'STORE';
+  const addr = vault.address || '';
+  const phone = vault.phone || '';
+  const tax = vault.taxId || '';
+  const lines = [];
+  const W = 42;
+  const hr = '─'.repeat(W);
+  const dash = '-'.repeat(W);
+  lines.push('┌' + '─'.repeat(W) + '┐');
+  lines.push('│' + centerPad(store, W) + '│');
+  if (addr) {
+    // wrap address if long
+    const a = addr;
+    for (let i = 0; i < a.length; i += W) {
+      lines.push('│' + centerPad(a.slice(i, i + W), W) + '│');
+    }
+  }
+  if (phone) lines.push('│' + centerPad('Tel: ' + phone, W) + '│');
+  if (tax) lines.push('│' + centerPad('TAX ID ' + tax, W) + '│');
+  lines.push('├' + hr + '┤');
+  const title = txn.type === 'sale' ? 'ใบเสร็จรับเงิน / RECEIPT' :
+                txn.type === 'purchase' ? 'ใบรับสินค้า / PURCHASE' : txn.type.toUpperCase();
+  lines.push('│' + title.padEnd(W).slice(0, W) + '│');
+  lines.push('│' + (`เลขที่ ${txn.ref}`).padEnd(W).slice(0, W) + '│');
+  lines.push('│' + (`วันที่ ${txn.date}`).padEnd(W).slice(0, W) + '│');
+  if (txn.contact_name) {
+    lines.push('│' + (`ลูกค้า: ${txn.contact_name}`).padEnd(W).slice(0, W) + '│');
+  }
+  lines.push('├' + hr + '┤');
+  lines.push('│' + 'รายการ'.padEnd(18) + 'จำนวน'.padStart(5) + 'ราคา'.padStart(8) + 'รวม'.padStart(9) + '│');
+  lines.push('│' + dash + '│');
+
+  (txn.lines || []).forEach(ln => {
+    const name = (ln.name || ln.code || '').slice(0, 18).padEnd(18);
+    const qty = String(ln.qty).padStart(5);
+    const price = moneyPlain(ln.price).padStart(8);
+    const amt = moneyPlain(ln.qty * ln.price).padStart(9);
+    lines.push('│' + (name + qty + ' ' + price + amt).slice(0, W).padEnd(W) + '│');
+  });
+
+  lines.push('├' + hr + '┤');
+  const itemCount = (txn.lines || []).reduce((s, l) => s + Number(l.qty || 0), 0);
+  lines.push('│' + (`จำนวนชิ้น ${itemCount}`).padEnd(W).slice(0, W) + '│');
+  lines.push('│' + (`รวมทั้งสิ้น / TOTAL`).padEnd(W - 10) + moneyPlain(txn.total).padStart(10) + '│');
+  if (txn.payment) {
+    const pay = txn.payment === 'cash' ? 'เงินสด/CASH' :
+                txn.payment === 'transfer' ? 'โอน/TRANSFER' : 'เครดิต/CREDIT';
+    lines.push('│' + (`ชำระ: ${pay}`).padEnd(W).slice(0, W) + '│');
+    if (txn.payment !== 'credit' && txn.paid != null) {
+      lines.push('│' + (`รับเงิน: ${moneyPlain(txn.paid)}`).padEnd(W).slice(0, W) + '│');
+    }
+  }
+  if (txn.note) lines.push('│' + (`หมายเหตุ: ${txn.note}`).padEnd(W).slice(0, W) + '│');
+  lines.push('└' + '─'.repeat(W) + '┘');
+  lines.push('');
+  const foot = (vault.footer || '').trim() || (LANG === 'th' ? 'ขอบคุณที่อุดหนุน' : 'Thank you');
+  lines.push(centerPad(foot, W));
+  lines.push(centerPad('ALGOR LEDGER', W));
+  return lines;
+}
+
+function buildReceiptHtml(txn) {
+  const text = buildReceiptText(txn).join('\n');
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ใบเสร็จ ${txn.ref}</title>
+<style>
+  @page { size: 80mm auto; margin: 4mm; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #fff; color: #000;
+    font-family: "Courier New", Courier, monospace;
+  }
+  .ticket {
+    width: 72mm;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 2mm 1mm;
+    font-size: 12px;
+    line-height: 1.35;
+    white-space: pre;
+  }
+  .actions {
+    text-align: center;
+    padding: 12px;
+    font-family: system-ui, sans-serif;
+  }
+  .actions button {
+    font-size: 14px; padding: 8px 18px; margin: 4px; cursor: pointer;
+  }
+  @media print {
+    .actions { display: none !important; }
+    .ticket { width: 72mm; }
+  }
+</style>
+</head>
+<body>
+  <div class="actions">
+    <button onclick="window.print()">พิมพ์ / Print</button>
+    <button onclick="window.close()">ปิด / Close</button>
+  </div>
+  <div class="ticket">${escaped}</div>
+  <script>
+    window.onload = function () {
+      setTimeout(function () { window.print(); }, 250);
+    };
+  </script>
+</body>
+</html>`;
+}
+
+function resolveTxn(ref) {
+  if (!vault?.txns?.length) return null;
+  if (ref && ref !== 'LAST') {
+    return findTxn(ref) || null;
+  }
+  if (lastReceiptRef) {
+    const t = findTxn(lastReceiptRef);
+    if (t) return t;
+  }
+  // last sale
+  for (let i = vault.txns.length - 1; i >= 0; i--) {
+    if (vault.txns[i].type === 'sale') return vault.txns[i];
+  }
+  return vault.txns[vault.txns.length - 1] || null;
+}
+
+function showReceipt(ref) {
+  const txn = resolveTxn(ref);
+  if (!txn) {
+    print(LANG === 'th' ? 'ไม่พบใบเสร็จ' : 'Receipt not found', 'warn');
+    return;
+  }
+  lastReceiptRef = txn.ref;
+  buildReceiptText(txn).forEach(l => print(l, 'out'));
+}
+
+function printReceipt(ref) {
+  const txn = resolveTxn(ref);
+  if (!txn) {
+    print(LANG === 'th' ? 'ไม่พบใบเสร็จ' : 'Receipt not found', 'warn');
+    return;
+  }
+  lastReceiptRef = txn.ref;
+  const html = buildReceiptHtml(txn);
+  const w = window.open('', '_blank', 'width=420,height=700');
+  if (!w) {
+    // fallback: iframe print (works when popup blocked)
+    printViaIframe(html, txn.ref);
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  print(LANG === 'th' ? `ส่งใบเสร็จ ${txn.ref} ไปพิมพ์แล้ว` : `Sent ${txn.ref} to printer`, 'system');
+  beep(true);
+}
+
+function printViaIframe(html, ref) {
+  let frame = document.getElementById('print-frame');
+  if (!frame) {
+    frame = document.createElement('iframe');
+    frame.id = 'print-frame';
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(frame);
+  }
+  const doc = frame.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+  setTimeout(() => {
+    try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) {}
+  }, 300);
+  print(LANG === 'th' ? `ส่งใบเสร็จ ${ref} ไปพิมพ์แล้ว (iframe)` : `Sent ${ref} to printer (iframe)`, 'system');
+  beep(true);
+}
+
+function listReceipts(limit) {
+  const n = limit || 15;
+  const sales = (vault?.txns || []).filter(t => t.type === 'sale').reverse().slice(0, n);
+  if (!sales.length) {
+    print(LANG === 'th' ? 'ยังไม่มีใบเสร็จ' : 'No receipts', 'warn');
+    return;
+  }
+  print('REF              DATE                TOTAL', 'header');
+  sales.forEach(t => {
+    print(`${(t.ref + '                ').slice(0, 16)} ${(t.date || '').slice(0, 16).padEnd(18)} ${money(t.total).padStart(10)}`, 'out');
+  });
+  print(LANG === 'th' ? 'พิมพ์: PRINT <ref>  หรือ  PRINT LAST' : 'Print: PRINT <ref>  or  PRINT LAST', 'system');
+}
+
+// ---------- Commands: Items ----------
+function cmdItemAdd(parts) {
+  if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+  // ITEM ADD code name unit cost price [qty]
+  // name may contain spaces → take from index 2 until unit-like token is hard; use fixed positions
+  // Simpler: ITEM ADD <code> <unit> <cost> <price> [qty] then name is rest? 
+  // Better interactive if few args. For CLI: ITEM ADD code | name | unit | cost | price | qty
+  // We'll support: ITEM ADD <code> <name...> / <unit> <cost> <price> [qty]
+  // Parse by finding numeric tokens from the end.
+  if (parts.length < 6) {
+    print('ITEM ADD <code> <name> <unit> <cost> <price> [qty]', 'warn');
+    print('ตัวอย่าง: ITEM ADD A001 น้ำดื่ม600ml ขวด 5 10 100', 'system');
+    return;
+  }
+  const code = parts[1].toUpperCase();
+  if (findItemAny(code)) {
+    print(LANG === 'th' ? `รหัส ${code} มีอยู่แล้ว` : `Code ${code} exists`, 'error');
+    return;
+  }
+  // From the end: optional qty, then price, cost, unit, rest is name
+  let qty = 0;
+  let price, cost, unit;
+  let nameParts;
+  const nums = [];
+  // try parse last tokens as numbers
+  let i = parts.length - 1;
+  // qty optional
+  if (!isNaN(parseFloat(parts[i])) && parts.length >= 7) {
+    qty = parseFloat(parts[i]);
+    i--;
+  }
+  price = parseFloat(parts[i]); i--;
+  cost = parseFloat(parts[i]); i--;
+  unit = parts[i]; i--;
+  nameParts = parts.slice(2, i + 1);
+  if (isNaN(price) || isNaN(cost) || !unit || nameParts.length === 0) {
+    print('ITEM ADD <code> <name> <unit> <cost> <price> [qty]', 'warn');
+    return;
+  }
+  const item = {
+    id: uid(),
+    code,
+    name: nameParts.join(' '),
+    unit,
+    cost,
+    price,
+    qty,
+    min_qty: 0,
+    tags: [],
+    active: true,
+    created: now()
+  };
+  vault.items.push(item);
+  markDirty();
+  print(`+ ${code}  ${item.name}  ${unit}  ทุน ${money(cost)}  ขาย ${money(price)}  คงเหลือ ${qty}`, 'out');
+  beep(true);
+}
+
+function cmdItemEdit(parts) {
+  if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+  // ITEM EDIT <code> FIELD value...
+  if (parts.length < 4) {
+    print('ITEM EDIT <code> name|unit|cost|price|min <value>', 'warn');
+    return;
+  }
+  const item = findItemAny(parts[1]);
+  if (!item) { print(LANG === 'th' ? 'ไม่พบสินค้า' : 'Item not found', 'error'); return; }
+  const field = parts[2].toLowerCase();
+  const val = parts.slice(3).join(' ');
+  if (field === 'name') item.name = val;
+  else if (field === 'unit') item.unit = val;
+  else if (field === 'cost') item.cost = parseFloat(val) || 0;
+  else if (field === 'price') item.price = parseFloat(val) || 0;
+  else if (field === 'min' || field === 'min_qty') item.min_qty = parseFloat(val) || 0;
+  else { print('FIELD: name | unit | cost | price | min', 'warn'); return; }
+  markDirty();
+  print(`* ${item.code} updated`, 'system');
+  beep(true);
+}
+
+function cmdItemDel(parts) {
+  if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+  if (!parts[1]) { print('ITEM DEL <code>', 'warn'); return; }
+  const item = findItemAny(parts[1]);
+  if (!item) { print(LANG === 'th' ? 'ไม่พบสินค้า' : 'Item not found', 'error'); return; }
+  item.active = false;
+  markDirty();
+  print(`- ${item.code} ปิดใช้งานแล้ว`, 'system');
+  beep(true);
+}
+
+function cmdItemList(filter) {
+  if (!vault?.items?.length) { print(t('no_data'), 'warn'); return; }
+  const list = vault.items.filter(i => i.active !== false);
+  if (!list.length) { print(t('no_data'), 'warn'); return; }
+  print('CODE     NAME                      UNIT    COST      PRICE     QTY', 'header');
+  print('─'.repeat(70), 'system');
+  list.forEach(i => {
+    if (filter && !(`${i.code} ${i.name}`.toLowerCase().includes(filter.toLowerCase()))) return;
+    const row = [
+      i.code.padEnd(8),
+      i.name.slice(0, 24).padEnd(24),
+      (i.unit || '').slice(0, 6).padEnd(6),
+      money(i.cost).padStart(9),
+      money(i.price).padStart(9),
+      String(i.qty).padStart(6)
+    ].join(' ');
+    print(row, i.qty <= (i.min_qty || 0) ? 'warn' : 'out');
+  });
+  print(`รวม ${list.length} รายการ`, 'system');
+}
+
+function cmdItemView(code) {
+  const item = findItemAny(code);
+  if (!item) { print(LANG === 'th' ? 'ไม่พบสินค้า' : 'Item not found', 'error'); return; }
+  print(`── ${item.code} ──────────────────────`, 'header');
+  print(`ชื่อ     : ${item.name}`, 'out');
+  print(`หน่วย    : ${item.unit}`, 'out');
+  print(`ทุน      : ${money(item.cost)}`, 'money');
+  print(`ราคาขาย  : ${money(item.price)}`, 'money');
+  print(`คงเหลือ  : ${item.qty}`, item.qty <= (item.min_qty || 0) ? 'warn' : 'out');
+  print(`ขั้นต่ำ  : ${item.min_qty || 0}`, 'out');
+  print(`สถานะ    : ${item.active === false ? 'ปิด' : 'ใช้งาน'}`, 'out');
+}
+
+function cmdItemSearch(q) {
+  if (!q) { print('ITEM SEARCH <คำ>', 'warn'); return; }
+  cmdItemList(q);
+}
+
+function cmdStock(action, parts) {
+  if (!canEdit() && action !== 'LIST') { print(t('staff_denied'), 'error'); return; }
+  // STOCK IN/OUT/SET <code> <qty> [note]
+  if (parts.length < 3) {
+    print('STOCK IN|OUT|SET <code> <qty> [note]', 'warn');
+    return;
+  }
+  const item = findItem(parts[1]);
+  if (!item) { print(LANG === 'th' ? 'ไม่พบสินค้า' : 'Item not found', 'error'); return; }
+  const qty = parseFloat(parts[2]);
+  if (isNaN(qty) || qty < 0) { print('qty ต้องเป็นตัวเลข >= 0', 'error'); return; }
+  const note = parts.slice(3).join(' ') || '';
+  const before = item.qty;
+  if (action === 'IN') item.qty += qty;
+  else if (action === 'OUT') {
+    if (item.qty < qty) { print(LANG === 'th' ? `สต็อกไม่พอ (มี ${item.qty})` : `Insufficient stock (${item.qty})`, 'error'); return; }
+    item.qty -= qty;
+  } else if (action === 'SET') item.qty = qty;
+  // record adjust txn
+  const ref = nextRef('adjust');
+  vault.txns.push({
+    id: uid(), type: 'adjust', date: now(), ref,
+    lines: [{ item_id: item.id, code: item.code, name: item.name, qty: action === 'SET' ? (qty - before) : (action === 'IN' ? qty : -qty), price: 0, cost: item.cost }],
+    subtotal: 0, total: 0, paid: 0, payment: '', note: `${action} ${note}`.trim(), contact_id: null
+  });
+  markDirty();
+  print(`${item.code}  ${before} → ${item.qty}  [${ref}]`, 'out');
+  beep(true);
+}
+
+function cmdLowStock() {
+  if (!vault?.items?.length) { print(t('no_data'), 'warn'); return; }
+  const low = vault.items.filter(i => i.active !== false && i.qty <= (i.min_qty || 0));
+  if (!low.length) {
+    print(LANG === 'th' ? 'ไม่มีสินค้าใกล้หมด' : 'No low stock items', 'system');
+    return;
+  }
+  print('CODE     NAME                      QTY    MIN', 'header');
+  low.forEach(i => {
+    print(`${i.code.padEnd(8)} ${i.name.slice(0,24).padEnd(24)} ${String(i.qty).padStart(5)}  ${String(i.min_qty||0).padStart(5)}`, 'warn');
+  });
+}
+
+// ---------- Sale / Purchase wizards ----------
+function startSaleWizard(quickParts) {
+  if (!isStaff()) { print(t('staff_denied'), 'error'); return; }
+  if (!vault) { print(t('no_store'), 'error'); return; }
+  // Quick: SALE code qty [code qty ...]
+  if (quickParts && quickParts.length >= 2) {
+    const lines = [];
+    for (let i = 0; i < quickParts.length; i += 2) {
+      const code = quickParts[i];
+      const qty = parseFloat(quickParts[i + 1]);
+      const item = findItem(code);
+      if (!item) { print(`ไม่พบ ${code}`, 'error'); return; }
+      if (isNaN(qty) || qty <= 0) { print('qty ไม่ถูกต้อง', 'error'); return; }
+      if (item.qty < qty) { print(`${code} สต็อกไม่พอ (มี ${item.qty})`, 'error'); return; }
+      lines.push({ item_id: item.id, code: item.code, name: item.name, qty, price: item.price, cost: item.cost });
+    }
+    finishSale(lines, 'cash', '');
+    return;
+  }
+  wizard = { type: 'sale', step: 'item', lines: [], contact: null };
+  print('── SALE ──────────────────────────', 'header');
+  print(LANG === 'th' ? 'พิมพ์รหัสสินค้า + จำนวน  หรือ END เพื่อจบ' : 'Enter code + qty, or END to finish', 'system');
+  print(LANG === 'th' ? 'ตัวอย่าง: A001 2' : 'Example: A001 2', 'system');
+  PROMPT_LABEL.textContent = 'SALE>';
+}
+
+function startBuyWizard(quickParts) {
+  if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+  if (!vault) { print(t('no_store'), 'error'); return; }
+  if (quickParts && quickParts.length >= 3) {
+    // BUY code qty cost [code qty cost ...]
+    const lines = [];
+    for (let i = 0; i < quickParts.length; i += 3) {
+      const code = quickParts[i];
+      const qty = parseFloat(quickParts[i + 1]);
+      const cost = parseFloat(quickParts[i + 2]);
+      const item = findItem(code);
+      if (!item) { print(`ไม่พบ ${code}`, 'error'); return; }
+      if (isNaN(qty) || qty <= 0 || isNaN(cost)) { print('ข้อมูลไม่ถูกต้อง', 'error'); return; }
+      lines.push({ item_id: item.id, code: item.code, name: item.name, qty, price: cost, cost });
+    }
+    finishPurchase(lines, '');
+    return;
+  }
+  wizard = { type: 'purchase', step: 'item', lines: [] };
+  print('── PURCHASE / BUY ────────────────', 'header');
+  print(LANG === 'th' ? 'พิมพ์: รหัส จำนวน ราคาทุน  หรือ END' : 'Enter: code qty cost, or END', 'system');
+  PROMPT_LABEL.textContent = 'BUY>';
+}
+
+function handleWizardInput(input) {
+  const upper = input.trim().toUpperCase();
+  if (upper === 'CANCEL' || upper === 'ABORT' || upper === 'F12') {
+    wizard = null;
+    setMode(mode);
+    print(LANG === 'th' ? 'ยกเลิกแล้ว' : 'Cancelled', 'warn');
+    return true;
+  }
+
+  if (wizard.type === 'sale') {
+    if (wizard.step === 'item') {
+      if (upper === 'END' || upper === 'DONE' || upper === '.') {
+        if (!wizard.lines.length) {
+          print(LANG === 'th' ? 'ยังไม่มีรายการ' : 'No lines yet', 'warn');
+          return true;
+        }
+        wizard.step = 'pay';
+        const sub = wizard.lines.reduce((s, l) => s + l.qty * l.price, 0);
+        print(`Subtotal: ${money(sub)}`, 'money');
+        print(LANG === 'th' ? 'ชำระด้วย? cash / transfer / credit' : 'Payment? cash / transfer / credit', 'system');
+        PROMPT_LABEL.textContent = 'PAY>';
+        return true;
+      }
+      const parts = input.trim().split(/\s+/);
+      const code = parts[0];
+      const qty = parseFloat(parts[1] || '1');
+      const item = findItem(code);
+      if (!item) { print(`ไม่พบ ${code}`, 'error'); return true; }
+      if (isNaN(qty) || qty <= 0) { print('qty ไม่ถูกต้อง', 'error'); return true; }
+      const already = wizard.lines.filter(l => l.code === item.code).reduce((s, l) => s + l.qty, 0);
+      if (item.qty < already + qty) {
+        print(`${code} สต็อกไม่พอ (มี ${item.qty}, จอง ${already})`, 'error');
+        return true;
+      }
+      wizard.lines.push({ item_id: item.id, code: item.code, name: item.name, qty, price: item.price, cost: item.cost });
+      print(`  ${item.name}  x${qty}  = ${money(qty * item.price)}`, 'out');
+      return true;
+    }
+    if (wizard.step === 'pay') {
+      let pay = upper.toLowerCase();
+      if (pay === 'C' || pay === 'เงินสด') pay = 'cash';
+      if (pay === 'T' || pay === 'โอน') pay = 'transfer';
+      if (pay === 'CR' || pay === 'เครดิต') pay = 'credit';
+      if (!['cash', 'transfer', 'credit'].includes(pay)) {
+        print('cash | transfer | credit', 'warn');
+        return true;
+      }
+      finishSale(wizard.lines, pay, '');
+      wizard = null;
+      setMode(mode);
+      return true;
+    }
+  }
+
+  if (wizard.type === 'purchase') {
+    if (wizard.step === 'item') {
+      if (upper === 'END' || upper === 'DONE' || upper === '.') {
+        if (!wizard.lines.length) {
+          print(LANG === 'th' ? 'ยังไม่มีรายการ' : 'No lines yet', 'warn');
+          return true;
+        }
+        finishPurchase(wizard.lines, '');
+        wizard = null;
+        setMode(mode);
+        return true;
+      }
+      const parts = input.trim().split(/\s+/);
+      if (parts.length < 3) {
+        print('รูปแบบ: รหัส จำนวน ราคาทุน', 'warn');
+        return true;
+      }
+      const code = parts[0];
+      const qty = parseFloat(parts[1]);
+      const cost = parseFloat(parts[2]);
+      const item = findItem(code);
+      if (!item) { print(`ไม่พบ ${code}`, 'error'); return true; }
+      if (isNaN(qty) || qty <= 0 || isNaN(cost)) { print('ข้อมูลไม่ถูกต้อง', 'error'); return true; }
+      wizard.lines.push({ item_id: item.id, code: item.code, name: item.name, qty, price: cost, cost });
+      print(`  ${item.name}  x${qty} @ ${money(cost)}  = ${money(qty * cost)}`, 'out');
+      return true;
+    }
+  }
+  return false;
+}
+
+function finishSale(lines, payment, note) {
+  const subtotal = lines.reduce((s, l) => s + l.qty * l.price, 0);
+  const ref = nextRef('sale');
+  // deduct stock
+  lines.forEach(ln => {
+    const item = vault.items.find(i => i.id === ln.item_id);
+    if (item) item.qty -= ln.qty;
+  });
+  const txn = {
+    id: uid(), type: 'sale', date: now(), ref,
+    lines, subtotal, total: subtotal, paid: payment === 'credit' ? 0 : subtotal,
+    payment, note, contact_id: null, contact_name: null
+  };
+  vault.txns.push(txn);
+  lastReceiptRef = ref;
+  markDirty();
+  print(`บันทึก ${ref}  รวม ${money(subtotal)}  (${payment})`, 'money');
+  ensureStoreFields();
+  if (vault.autoPrint) {
+    print(LANG === 'th' ? 'พิมพ์ใบเสร็จอัตโนมัติ…' : 'Auto-printing receipt…', 'system');
+    printReceipt(ref);
+  } else {
+    print(LANG === 'th' ? `ดูใบเสร็จ: RECEIPT   พิมพ์: PRINT   เปิดอัตโนมัติ: SETPRINT ON` : `View: RECEIPT   Print: PRINT   Auto: SETPRINT ON`, 'system');
+  }
+  beep(true);
+}
+
+function finishPurchase(lines, note) {
+  const subtotal = lines.reduce((s, l) => s + l.qty * l.price, 0);
+  const ref = nextRef('purchase');
+  lines.forEach(ln => {
+    const item = vault.items.find(i => i.id === ln.item_id);
+    if (item) {
+      // weighted average cost optional — simple: update cost to latest
+      item.cost = ln.cost;
+      item.qty += ln.qty;
+    }
+  });
+  const txn = {
+    id: uid(), type: 'purchase', date: now(), ref,
+    lines, subtotal, total: subtotal, paid: subtotal,
+    payment: 'cash', note, contact_id: null, contact_name: null
+  };
+  vault.txns.push(txn);
+  lastReceiptRef = ref;
+  markDirty();
+  print(`บันทึกซื้อ ${ref}  รวม ${money(subtotal)}`, 'money');
+  beep(true);
+}
+
+// ---------- Reports ----------
+function reportDay(dateStr) {
+  const d = dateStr || today();
+  const txns = (vault.txns || []).filter(t => (t.date || '').startsWith(d));
+  let sales = 0, purchases = 0, costOfSales = 0;
+  txns.forEach(t => {
+    if (t.type === 'sale') {
+      sales += t.total;
+      (t.lines || []).forEach(l => costOfSales += (l.cost || 0) * l.qty);
+    } else if (t.type === 'purchase') purchases += t.total;
+  });
+  print(`── รายงานวันที่ ${d} ──`, 'header');
+  print(`บิลขาย      : ${txns.filter(t => t.type === 'sale').length} รายการ`, 'out');
+  print(`ยอดขาย      : ${money(sales)}`, 'money');
+  print(`ต้นทุนขาย   : ${money(costOfSales)}`, 'out');
+  print(`กำไรขั้นต้น : ${money(sales - costOfSales)}`, 'money');
+  print(`ยอดซื้อ     : ${money(purchases)}`, 'out');
+  if (!txns.length) print(LANG === 'th' ? '(ไม่มีธุรกรรม)' : '(no transactions)', 'system');
+}
+
+function reportMonth(ym) {
+  const m = ym || today().slice(0, 7);
+  const txns = (vault.txns || []).filter(t => (t.date || '').startsWith(m));
+  let sales = 0, purchases = 0, costOfSales = 0;
+  txns.forEach(t => {
+    if (t.type === 'sale') {
+      sales += t.total;
+      (t.lines || []).forEach(l => costOfSales += (l.cost || 0) * l.qty);
+    } else if (t.type === 'purchase') purchases += t.total;
+  });
+  print(`── รายงานเดือน ${m} ──`, 'header');
+  print(`บิลขาย      : ${txns.filter(t => t.type === 'sale').length}`, 'out');
+  print(`ยอดขาย      : ${money(sales)}`, 'money');
+  print(`ต้นทุนขาย   : ${money(costOfSales)}`, 'out');
+  print(`กำไรขั้นต้น : ${money(sales - costOfSales)}`, 'money');
+  print(`ยอดซื้อ     : ${money(purchases)}`, 'out');
+}
+
+function reportItem(code) {
+  const item = findItemAny(code);
+  if (!item) { print(LANG === 'th' ? 'ไม่พบสินค้า' : 'Item not found', 'error'); return; }
+  let sold = 0, bought = 0, revenue = 0;
+  (vault.txns || []).forEach(t => {
+    (t.lines || []).forEach(l => {
+      if (l.item_id === item.id || l.code === item.code) {
+        if (t.type === 'sale') { sold += l.qty; revenue += l.qty * l.price; }
+        if (t.type === 'purchase') bought += l.qty;
+      }
+    });
+  });
+  print(`── ${item.code} ${item.name} ──`, 'header');
+  print(`คงเหลือ    : ${item.qty}`, 'out');
+  print(`ขายสะสม    : ${sold}`, 'out');
+  print(`ซื้อสะสม   : ${bought}`, 'out');
+  print(`รายได้สะสม : ${money(revenue)}`, 'money');
+}
+
+function cmdTxnList(parts) {
+  let list = vault.txns || [];
+  const typeFilter = (parts[1] || '').toLowerCase();
+  const dateFilter = parts[2] || parts[1];
+  if (['sale', 'purchase', 'adjust', 'expense', 'income'].includes(typeFilter)) {
+    list = list.filter(t => t.type === typeFilter);
+  } else if (dateFilter && /^\d{4}/.test(dateFilter)) {
+    list = list.filter(t => (t.date || '').startsWith(dateFilter));
+  }
+  list = [...list].reverse().slice(0, 30);
+  if (!list.length) { print(t('no_data'), 'warn'); return; }
+  print('REF              TYPE       DATE                TOTAL', 'header');
+  list.forEach(t => {
+    print(`${t.ref.padEnd(16)} ${t.type.padEnd(10)} ${(t.date||'').slice(0,16).padEnd(18)} ${money(t.total).padStart(10)}`, 'out');
+  });
+}
+
+// ---------- Status / Help / Menu ----------
+function showStatus() {
+  if (!vault) { print(t('no_store'), 'warn'); return; }
+  print('── STATUS ────────────────────────', 'header');
+  print(`ร้าน       : ${vault.name}`, 'out');
+  if (vault.address) print(`ที่อยู่     : ${vault.address}`, 'out');
+  print(`โหมด       : ${mode}`, 'out');
+  print(`สินค้า     : ${(vault.items || []).filter(i => i.active !== false).length}`, 'out');
+  print(`ธุรกรรม    : ${(vault.txns || []).length}`, 'out');
+  print(`อัปเดตล่าสุด: ${vault.updated || '-'}`, 'out');
+  if (dirty) print(t('unsaved'), 'warn');
+  if (vault.meta?.readonly) print('[READ-ONLY]', 'warn');
+  // today summary
+  const d = today();
+  const todaySales = (vault.txns || []).filter(t => t.type === 'sale' && (t.date || '').startsWith(d));
+  const sum = todaySales.reduce((s, t) => s + t.total, 0);
+  print(`ยอดขายวันนี้: ${money(sum)} (${todaySales.length} บิล)`, 'money');
+}
+
+function showMainMenu() {
+  print('┌─────────────────────────────────────────────┐', 'menu');
+  print('│           ALGOR LEDGER — MENU               │', 'menu');
+  print('├─────────────────────────────────────────────┤', 'menu');
+  print('│  1. MODE OWNER     เจ้าของร้าน              │', 'menu');
+  print('│  2. MODE STAFF     พนักงานขาย               │', 'menu');
+  print('│  3. LOAD           โหลด vault               │', 'menu');
+  print('│  4. SAVE           บันทึก vault             │', 'menu');
+  print('│  5. STATUS         สถานะ                    │', 'menu');
+  print('│  6. HELP           คำสั่งทั้งหมด            │', 'menu');
+  print('│  7. LANG           เปลี่ยนภาษา              │', 'menu');
+  print('│  9. MODE GUI       หน้าต่างกราฟิก           │', 'menu');
+  print('│  0. CLEAR          ล้างหน้าจอ               │', 'menu');
+  print('└─────────────────────────────────────────────┘', 'menu');
+}
+
+function showFullHelp() {
+  print('── คำสั่งทั้งหมด / ALL COMMANDS ──', 'header');
+  print('', 'system');
+  print('ระบบ:  MENU HELP STATUS CLEAR LANG LOCK', 'system');
+  print('       LOAD SAVE SAVERO MODE OWNER|STAFF|GUI|CLI', 'system');
+  print('       SETNAME SETADDR SETPASS CHGPASS', 'system');
+  print('', 'system');
+  print('สินค้า: ITEM ADD <code> <name> <unit> <cost> <price> [qty]', 'out');
+  print('       ITEM EDIT <code> name|unit|cost|price|min <val>', 'out');
+  print('       ITEM DEL <code>   ITEM LIST   ITEM VIEW <code>', 'out');
+  print('       ITEM SEARCH <คำ>  LOWSTOCK', 'out');
+  print('       STOCK IN|OUT|SET <code> <qty> [note]', 'out');
+  print('', 'system');
+  print('ขาย/ซื้อ: SALE [code qty ...]   (interactive หรือเร็ว)', 'out');
+  print('         BUY  [code qty cost ...]', 'out');
+  print('ใบเสร็จ: RECEIPT [ref|LAST]   PRINT [ref|LAST]', 'out');
+  print('         RECEIPT LIST   SETPRINT ON|OFF', 'out');
+  print('         SETPHONE SETTAXID SETFOOTER', 'out');
+  print('', 'system');
+  print('รายงาน: REPORT DAY [YYYY-MM-DD]', 'out');
+  print('       REPORT MONTH [YYYY-MM]', 'out');
+  print('       REPORT ITEM <code>', 'out');
+  print('       TXN LIST [type|date]', 'out');
+  print('', 'system');
+  print('F-keys: F1 Help  F2 Menu  F5 Status  F6 Items', 'system');
+  print('        F7 GUI  F8 Sale  F9 Report  F10 Lock  F12 Cancel', 'system');
+}
+
+// ---------- GUI MODE ----------
+let guiCart = []; // { item_id, code, name, qty, price, cost }
+
+function setGuiStatus(msg) {
+  const el = document.getElementById('gui-statusbar');
+  if (el) el.textContent = msg;
+}
+
+function enterGuiMode() {
+  if (!vault) {
+    vault = createEmptyVault();
+    updateVaultStatus();
+    print(t('created'), 'system');
+  }
+  if (mode === 'BOOT') setMode('OWNER');
+  document.body.classList.add('gui-on');
+  MODE_DISPLAY.textContent = 'GUI';
+  guiRefreshAll();
+  setGuiStatus(LANG === 'th' ? 'โหมด GUI · F7 หรือ CLI เพื่อกลับ' : 'GUI mode · F7 or CLI to return');
+  print(LANG === 'th' ? 'เข้าสู่โหมด GUI (F7 / MODE CLI เพื่อกลับ)' : 'Entered GUI mode (F7 / MODE CLI to return)', 'system');
+  beep(true);
+}
+
+function leaveGuiMode() {
+  document.body.classList.remove('gui-on');
+  setMode(mode === 'BOOT' ? 'BOOT' : (mode === 'GUI' ? 'OWNER' : mode));
+  CMD.focus();
+  print(LANG === 'th' ? 'กลับสู่โหมด CLI' : 'Returned to CLI mode', 'system');
+}
+
+function guiSwitchTab(name) {
+  document.querySelectorAll('.gui-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.gui-panel').forEach(p => p.classList.toggle('active', p.id === 'gui-panel-' + name));
+  if (name === 'sale' || name === 'items') guiRefreshItems();
+  if (name === 'report') guiRunReport('day');
+  if (name === 'system') guiShowStatus();
+}
+
+function guiRefreshItems() {
+  const pick = document.getElementById('gui-item-pick');
+  const listOut = document.getElementById('gui-items-list');
+  const items = (vault?.items || []).filter(i => i.active !== false);
+  if (pick) {
+    pick.innerHTML = '';
+    items.forEach(i => {
+      const opt = document.createElement('option');
+      opt.value = i.code;
+      opt.textContent = `${i.code}  ${i.name}  @${money(i.price)}  qty:${i.qty}`;
+      pick.appendChild(opt);
+    });
+  }
+  if (listOut) {
+    if (!items.length) listOut.textContent = LANG === 'th' ? 'ยังไม่มีสินค้า' : 'No items';
+    else {
+      const rows = ['CODE     NAME                      PRICE      QTY'];
+      items.forEach(i => {
+        rows.push(
+          `${(i.code + '        ').slice(0, 8)} ${(i.name + '                        ').slice(0, 24)} ${money(i.price).padStart(9)} ${String(i.qty).padStart(6)}`
+        );
+      });
+      listOut.textContent = rows.join('\n');
+    }
+  }
+}
+
+function guiRenderCart() {
+  const el = document.getElementById('gui-cart');
+  const tot = document.getElementById('gui-cart-total');
+  if (!el) return;
+  if (!guiCart.length) {
+    el.textContent = '—';
+    if (tot) tot.textContent = 'TOTAL: 0.00';
+    return;
+  }
+  el.textContent = guiCart.map((l, i) =>
+    `${i + 1}. ${l.code} ${l.name}  x${l.qty}  = ${money(l.qty * l.price)}`
+  ).join('\n');
+  const sum = guiCart.reduce((s, l) => s + l.qty * l.price, 0);
+  if (tot) tot.textContent = 'TOTAL: ' + money(sum);
+}
+
+function guiAddToCart() {
+  if (!vault) { setGuiStatus('No store'); return; }
+  const pick = document.getElementById('gui-item-pick');
+  const qtyEl = document.getElementById('gui-sale-qty');
+  const code = pick?.value;
+  const qty = parseFloat(qtyEl?.value || '1');
+  const item = findItem(code);
+  if (!item) { setGuiStatus(LANG === 'th' ? 'เลือกสินค้าก่อน' : 'Select an item'); return; }
+  if (isNaN(qty) || qty <= 0) { setGuiStatus('qty invalid'); return; }
+  const already = guiCart.filter(l => l.code === item.code).reduce((s, l) => s + l.qty, 0);
+  if (item.qty < already + qty) {
+    setGuiStatus(`${item.code} stock ${item.qty}`);
+    return;
+  }
+  guiCart.push({ item_id: item.id, code: item.code, name: item.name, qty, price: item.price, cost: item.cost });
+  guiRenderCart();
+  setGuiStatus(`+ ${item.code} x${qty}`);
+}
+
+function guiCheckout() {
+  if (!guiCart.length) { setGuiStatus('Cart empty'); return; }
+  if (!isStaff()) {
+    setMode('OWNER');
+  }
+  const pay = document.getElementById('gui-pay')?.value || 'cash';
+  const lines = guiCart.map(l => ({ ...l }));
+  finishSale(lines, pay, '');
+  guiCart = [];
+  guiRenderCart();
+  guiRefreshItems();
+  const out = document.getElementById('gui-sale-out');
+  if (out) {
+    const txn = resolveTxn(lastReceiptRef);
+    out.textContent = txn
+      ? buildReceiptText(txn).join('\n')
+      : ((LANG === 'th' ? 'ขายสำเร็จ  ' : 'Sold  ') + (lastReceiptRef || '') + '  (' + pay + ')');
+  }
+  setGuiStatus('Checkout OK ' + (lastReceiptRef || ''));
+  // finishSale already auto-prints when enabled; otherwise offer manual print from GUI
+  if (!vault?.autoPrint && lastReceiptRef) {
+    // show receipt on screen; user can press Print
+  }
+  beep(true);
+}
+
+function guiShowStatus() {
+  const el = document.getElementById('gui-sys-out');
+  if (!el) return;
+  if (!vault) { el.textContent = 'No store'; return; }
+  const d = today();
+  const todaySales = (vault.txns || []).filter(t => t.type === 'sale' && (t.date || '').startsWith(d));
+  const sum = todaySales.reduce((s, t) => s + t.total, 0);
+  el.textContent = [
+    `Store   : ${vault.name || 'UNNAMED'}`,
+    `Address : ${vault.address || '-'}`,
+    `Mode    : ${mode}`,
+    `Items   : ${(vault.items || []).filter(i => i.active !== false).length}`,
+    `Txns    : ${(vault.txns || []).length}`,
+    `Sales today : ${money(sum)} (${todaySales.length} bills)`,
+    `Unlocked: ${masterPassword ? 'YES' : 'NO'}`,
+    `Unsaved : ${dirty ? 'YES' : 'no'}`,
+    `Updated : ${vault.updated || '-'}`
+  ].join('\n');
+  const vn = document.getElementById('gui-vname');
+  const va = document.getElementById('gui-vaddr');
+  if (vn && !vn.value) vn.value = vault.name || '';
+  if (va && !va.value) va.value = vault.address || '';
+  ensureStoreFields();
+  const vp = document.getElementById('gui-vphone');
+  const vt = document.getElementById('gui-vtax');
+  const vf = document.getElementById('gui-vfooter');
+  const ap = document.getElementById('gui-autoprint');
+  if (vp) vp.value = vault.phone || '';
+  if (vt) vt.value = vault.taxId || '';
+  if (vf) vf.value = vault.footer || '';
+  if (ap) ap.checked = !!vault.autoPrint;
+}
+
+function guiRunReport(kind) {
+  const out = document.getElementById('gui-report-out');
+  if (!out || !vault) { if (out) out.textContent = 'No store'; return; }
+  const lines = [];
+  if (kind === 'day' || kind === 'month') {
+    const key = kind === 'month' ? today().slice(0, 7) : today();
+    const txns = (vault.txns || []).filter(t => (t.date || '').startsWith(key));
+    let sales = 0, purchases = 0, cos = 0;
+    txns.forEach(t => {
+      if (t.type === 'sale') {
+        sales += t.total;
+        (t.lines || []).forEach(l => cos += (l.cost || 0) * l.qty);
+      } else if (t.type === 'purchase') purchases += t.total;
+    });
+    lines.push(kind === 'month' ? `── MONTH ${key} ──` : `── DAY ${key} ──`);
+    lines.push(`Sales bills : ${txns.filter(t => t.type === 'sale').length}`);
+    lines.push(`Sales total : ${money(sales)}`);
+    lines.push(`COGS        : ${money(cos)}`);
+    lines.push(`Gross profit: ${money(sales - cos)}`);
+    lines.push(`Purchases   : ${money(purchases)}`);
+  } else if (kind === 'txn') {
+    lines.push('REF              TYPE       TOTAL');
+    [...(vault.txns || [])].reverse().slice(0, 20).forEach(t => {
+      lines.push(`${(t.ref + '                ').slice(0, 16)} ${(t.type + '          ').slice(0, 10)} ${money(t.total)}`);
+    });
+    if (!vault.txns?.length) lines.push('(none)');
+  } else if (kind === 'low') {
+    const low = (vault.items || []).filter(i => i.active !== false && i.qty <= (i.min_qty || 0));
+    lines.push('LOW STOCK');
+    low.forEach(i => lines.push(`${i.code}  ${i.name}  qty=${i.qty}  min=${i.min_qty || 0}`));
+    if (!low.length) lines.push('(none)');
+  }
+  out.textContent = lines.join('\n');
+  setGuiStatus('Report: ' + kind);
+}
+
+function guiAddItem() {
+  if (!canEdit()) {
+    if (mode !== 'OWNER') setMode('OWNER');
+    if (vault?.meta?.readonly) {
+      setGuiStatus('READ-ONLY');
+      return;
+    }
+  }
+  if (!vault) vault = createEmptyVault();
+  const code = (document.getElementById('gui-icode')?.value || '').trim().toUpperCase();
+  const name = (document.getElementById('gui-iname')?.value || '').trim();
+  const unit = (document.getElementById('gui-iunit')?.value || 'ชิ้น').trim();
+  const cost = parseFloat(document.getElementById('gui-icost')?.value || '0') || 0;
+  const price = parseFloat(document.getElementById('gui-iprice')?.value || '0') || 0;
+  const qty = parseFloat(document.getElementById('gui-iqty')?.value || '0') || 0;
+  const out = document.getElementById('gui-items-out');
+  if (!code || !name) {
+    if (out) out.textContent = 'Need code + name';
+    return;
+  }
+  if (findItemAny(code)) {
+    if (out) out.textContent = 'Code exists';
+    return;
+  }
+  vault.items.push({
+    id: uid(), code, name, unit, cost, price, qty, min_qty: 0, tags: [], active: true, created: now()
+  });
+  markDirty();
+  updateVaultStatus();
+  guiRefreshItems();
+  if (out) out.textContent = `+ ${code} ${name}`;
+  setGuiStatus('Item added');
+  ['gui-icode', 'gui-iname', 'gui-iunit', 'gui-icost', 'gui-iprice', 'gui-iqty'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  beep(true);
+}
+
+function guiRefreshAll() {
+  guiRefreshItems();
+  guiRenderCart();
+  guiShowStatus();
+}
+
+function wireGui() {
+  document.querySelectorAll('.gui-tab').forEach(tab => {
+    tab.addEventListener('click', () => guiSwitchTab(tab.dataset.tab));
+  });
+  document.getElementById('gui-to-cli')?.addEventListener('click', leaveGuiMode);
+  document.getElementById('gui-cli-btn2')?.addEventListener('click', leaveGuiMode);
+  document.getElementById('gui-add-cart')?.addEventListener('click', guiAddToCart);
+  document.getElementById('gui-cart-clear')?.addEventListener('click', () => {
+    guiCart = []; guiRenderCart(); setGuiStatus('Cart cleared');
+  });
+  document.getElementById('gui-checkout')?.addEventListener('click', guiCheckout);
+  document.getElementById('gui-receipt-last')?.addEventListener('click', () => {
+    const out = document.getElementById('gui-sale-out');
+    if (!lastReceiptRef) { if (out) out.textContent = 'No receipt'; return; }
+    const txn = findTxn(lastReceiptRef);
+    if (!txn || !out) return;
+    out.textContent = buildReceiptText(txn).join('\n');
+  });
+  document.getElementById('gui-print-last')?.addEventListener('click', () => {
+    if (lastReceiptRef) printReceipt(lastReceiptRef);
+  });
+  document.getElementById('gui-item-add')?.addEventListener('click', guiAddItem);
+  document.getElementById('gui-items-refresh')?.addEventListener('click', guiRefreshItems);
+  document.getElementById('gui-rep-day')?.addEventListener('click', () => guiRunReport('day'));
+  document.getElementById('gui-rep-month')?.addEventListener('click', () => guiRunReport('month'));
+  document.getElementById('gui-rep-txn')?.addEventListener('click', () => guiRunReport('txn'));
+  document.getElementById('gui-rep-low')?.addEventListener('click', () => guiRunReport('low'));
+  document.getElementById('gui-save-btn')?.addEventListener('click', () => saveVaultFile(false));
+  document.getElementById('gui-load-btn')?.addEventListener('click', () => loadVaultFile());
+  document.getElementById('gui-lock-btn')?.addEventListener('click', () => {
+    masterPassword = null;
+    updateVaultStatus();
+    leaveGuiMode();
+    setMode('BOOT');
+    print(t('locked'), 'system');
+  });
+  document.getElementById('gui-owner-btn')?.addEventListener('click', () => {
+    if (!vault) vault = createEmptyVault();
+    setMode('OWNER');
+    guiShowStatus();
+    setGuiStatus('Owner mode');
+  });
+  document.getElementById('gui-setpass-btn')?.addEventListener('click', () => {
+    const p = document.getElementById('gui-pass')?.value || '';
+    if (p.length < 4) { setGuiStatus('Min 4 chars'); return; }
+    if (!vault) vault = createEmptyVault();
+    masterPassword = p;
+    markDirty();
+    updateVaultStatus();
+    setGuiStatus('Password set — remember to Save');
+    beep(true);
+  });
+  document.getElementById('gui-setname-btn')?.addEventListener('click', () => {
+    const name = (document.getElementById('gui-vname')?.value || '').trim();
+    if (!name) return;
+    if (!vault) vault = createEmptyVault();
+    vault.name = name;
+    markDirty();
+    updateVaultStatus();
+    guiShowStatus();
+    setGuiStatus('Name: ' + name);
+  });
+  document.getElementById('gui-setaddr-btn')?.addEventListener('click', () => {
+    if (!vault) return;
+    vault.address = (document.getElementById('gui-vaddr')?.value || '').trim();
+    markDirty();
+    guiShowStatus();
+    setGuiStatus('Address updated');
+  });
+  document.getElementById('gui-setcontact-btn')?.addEventListener('click', () => {
+    if (!vault) return;
+    ensureStoreFields();
+    vault.phone = (document.getElementById('gui-vphone')?.value || '').trim();
+    vault.taxId = (document.getElementById('gui-vtax')?.value || '').trim();
+    markDirty();
+    guiShowStatus();
+    setGuiStatus('Phone/Tax updated');
+  });
+  document.getElementById('gui-setfooter-btn')?.addEventListener('click', () => {
+    if (!vault) return;
+    ensureStoreFields();
+    vault.footer = (document.getElementById('gui-vfooter')?.value || '').trim();
+    markDirty();
+    setGuiStatus('Footer updated');
+  });
+  document.getElementById('gui-autoprint')?.addEventListener('change', (e) => {
+    if (!vault) return;
+    ensureStoreFields();
+    vault.autoPrint = !!e.target.checked;
+    markDirty();
+    setGuiStatus('Auto-print: ' + (vault.autoPrint ? 'ON' : 'OFF'));
+  });
+  document.getElementById('gui-status-btn')?.addEventListener('click', guiShowStatus);
+}
+wireGui();
+
+// ---------- Main command handler ----------
+async function handleCommand(raw) {
+  const input = raw.trim();
+  if (!input) return;
+
+  // wizard takes over
+  if (wizard) {
+    print(PROMPT_LABEL.textContent + ' ' + input, 'user');
+    handleWizardInput(input);
+    return;
+  }
+
+  print(PROMPT_LABEL.textContent + ' ' + input, 'user');
+  if (cmdHistory[cmdHistory.length - 1] !== input) cmdHistory.push(input);
+  if (cmdHistory.length > 80) cmdHistory.shift();
+  cmdHistIdx = cmdHistory.length;
+
+  const parts = input.split(/\s+/);
+  const cmd = parts[0].toUpperCase();
+  const arg1 = (parts[1] || '').toUpperCase();
+
+  // Language select
+  if (!LANG) {
+    if (cmd === '1' || cmd === 'TH' || cmd === 'ไทย') {
+      LANG = 'th'; localStorage.setItem('algor_ledger_lang', 'th');
+      print('ภาษา: ไทย', 'system');
+      showBoot();
+      return;
+    }
+    if (cmd === '2' || cmd === 'EN' || cmd === 'ENG') {
+      LANG = 'en'; localStorage.setItem('algor_ledger_lang', 'en');
+      print('Language: English', 'system');
+      showBoot();
+      return;
+    }
+    print('Choose 1 (ไทย) or 2 (English)', 'warn');
+    return;
+  }
+
+  // BOOT number shortcuts
+  if (mode === 'BOOT' && /^[0-9]$/.test(cmd)) {
+    const map = {
+      '1': 'MODE OWNER', '2': 'MODE STAFF', '3': 'LOAD', '4': 'SAVE',
+      '5': 'STATUS', '6': 'HELP', '7': 'LANG', '9': 'MODE GUI', '0': 'CLEAR'
+    };
+    if (map[cmd]) return handleCommand(map[cmd]);
+  }
+
+  // Global
+  if (cmd === 'MENU' || cmd === 'เมนู') { showMainMenu(); return; }
+  if (cmd === 'HELP' || cmd === '?' || cmd === 'ช่วย') { showFullHelp(); return; }
+  if (cmd === 'CLEAR' || cmd === 'CLS') { clearScreen(); return; }
+  if (cmd === 'LANG' || cmd === 'LANGUAGE') {
+    LANG = null; localStorage.removeItem('algor_ledger_lang');
+    showLangSelect();
+    return;
+  }
+  if (cmd === 'STATUS' || cmd === 'STAT') { showStatus(); return; }
+  if (cmd === 'LOCK') {
+    masterPassword = null;
+    updateVaultStatus();
+    setMode('BOOT');
+    print(t('locked'), 'system');
+    beep(true);
+    return;
+  }
+  if (cmd === 'LOAD') { await loadVaultFile(); return; }
+  if (cmd === 'SAVE') { await saveVaultFile(false); return; }
+  if (cmd === 'SAVERO') { await saveVaultFile(true); return; }
+
+  if (cmd === 'MODE') {
+    if (arg1 === 'OWNER' || arg1 === 'O') {
+      if (vault?.meta?.readonly) { print(t('readonly'), 'error'); return; }
+      if (!vault) {
+        vault = createEmptyVault();
+        updateVaultStatus();
+        print(t('created'), 'system');
+      }
+      if (!masterPassword && (vault.items?.length || vault.txns?.length)) {
+        const pass = prompt(t('enter_pass'));
+        if (pass === null) return;
+        masterPassword = pass;
+      }
+      setMode('OWNER');
+      updateVaultStatus();
+      print(LANG === 'th' ? 'โหมดเจ้าของร้าน' : 'Owner mode', 'system');
+      return;
+    }
+    if (arg1 === 'STAFF' || arg1 === 'S') {
+      if (!vault) { print(t('no_store'), 'error'); return; }
+      if (!masterPassword) {
+        const pass = prompt(t('enter_pass'));
+        if (pass === null) return;
+        // For staff we still need the password to have vault in memory;
+        // in a fuller version we'd separate staff PIN. For MVP same vault password.
+        masterPassword = pass;
+      }
+      setMode('STAFF');
+      updateVaultStatus();
+      print(LANG === 'th' ? 'โหมดพนักงาน' : 'Staff mode', 'system');
+      return;
+    }
+    if (arg1 === 'GUI' || arg1 === 'G') {
+      enterGuiMode();
+      return;
+    }
+    if (arg1 === 'CLI') {
+      leaveGuiMode();
+      return;
+    }
+    print('MODE OWNER | MODE STAFF | MODE GUI | MODE CLI', 'warn');
+    return;
+  }
+  if (cmd === 'GUI') {
+    enterGuiMode();
+    return;
+  }
+
+  if (cmd === 'SETNAME') {
+    if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+    if (!vault) vault = createEmptyVault();
+    const name = parts.slice(1).join(' ').trim();
+    if (!name) { print('SETNAME <ชื่อร้าน>', 'warn'); return; }
+    vault.name = name;
+    markDirty();
+    updateVaultStatus();
+    print(`ชื่อร้าน: ${name}`, 'system');
+    return;
+  }
+  if (cmd === 'SETADDR' || cmd === 'SETADDRESS') {
+    if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+    if (!vault) { print(t('no_store'), 'error'); return; }
+    const addr = parts.slice(1).join(' ').trim();
+    vault.address = addr;
+    markDirty();
+    print(`ที่อยู่: ${addr || '(ว่าง)'}`, 'system');
+    return;
+  }
+  if (cmd === 'SETPHONE') {
+    if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+    if (!vault) { print(t('no_store'), 'error'); return; }
+    ensureStoreFields();
+    vault.phone = parts.slice(1).join(' ').trim();
+    markDirty();
+    print(`โทร: ${vault.phone || '(ว่าง)'}`, 'system');
+    return;
+  }
+  if (cmd === 'SETTAXID') {
+    if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+    if (!vault) { print(t('no_store'), 'error'); return; }
+    ensureStoreFields();
+    vault.taxId = parts.slice(1).join(' ').trim();
+    markDirty();
+    print(`เลขผู้เสียภาษี: ${vault.taxId || '(ว่าง)'}`, 'system');
+    return;
+  }
+  if (cmd === 'SETFOOTER') {
+    if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+    if (!vault) { print(t('no_store'), 'error'); return; }
+    ensureStoreFields();
+    vault.footer = parts.slice(1).join(' ').trim();
+    markDirty();
+    print(`ท้ายใบเสร็จ: ${vault.footer || '(ค่าเริ่มต้น)'}`, 'system');
+    return;
+  }
+  if (cmd === 'SETPRINT') {
+    if (!canEdit() && mode !== 'OWNER') { print(t('staff_denied'), 'error'); return; }
+    if (!vault) { print(t('no_store'), 'error'); return; }
+    ensureStoreFields();
+    const v = (parts[1] || '').toUpperCase();
+    if (v === 'ON' || v === '1' || v === 'YES') vault.autoPrint = true;
+    else if (v === 'OFF' || v === '0' || v === 'NO') vault.autoPrint = false;
+    else {
+      print('SETPRINT ON | OFF', 'warn');
+      print(`ตอนนี้: ${vault.autoPrint ? 'ON' : 'OFF'}`, 'system');
+      return;
+    }
+    markDirty();
+    print(`พิมพ์อัตโนมัติหลังขาย: ${vault.autoPrint ? 'ON' : 'OFF'}`, 'system');
+    return;
+  }
+  if (cmd === 'SETPASS') {
+    if (mode !== 'OWNER' && mode !== 'BOOT') { print(t('staff_denied'), 'error'); return; }
+    if (!vault) vault = createEmptyVault();
+    const p = parts[1] || prompt(LANG === 'th' ? 'ตั้งรหัสผ่านใหม่:' : 'Set new password:');
+    if (!p || p.length < 4) { print(LANG === 'th' ? 'รหัสอย่างน้อย 4 ตัว' : 'Min 4 characters', 'warn'); return; }
+    masterPassword = p;
+    markDirty();
+    updateVaultStatus();
+    print(t('set_pass_ok'), 'system');
+    print(t('remember_pass'), 'warn');
+    beep(true);
+    return;
+  }
+  if (cmd === 'CHGPASS') {
+    if (!canEdit()) { print(t('staff_denied'), 'error'); return; }
+    const oldP = parts[1], newP = parts[2];
+    if (!oldP || !newP || newP.length < 4) { print('CHGPASS <old> <new>', 'warn'); return; }
+    if (oldP !== masterPassword) { print(t('wrong_pass'), 'error'); return; }
+    masterPassword = newP;
+    markDirty();
+    print(LANG === 'th' ? 'เปลี่ยนรหัสแล้ว — อย่าลืม SAVE' : 'Password changed — SAVE', 'system');
+    return;
+  }
+
+  // Need vault for business commands
+  if (!vault && !['MENU','HELP','CLEAR','LANG','LOAD','MODE','SETPASS','SETNAME'].includes(cmd)) {
+    print(t('no_store'), 'warn');
+    print('MODE OWNER หรือ LOAD ก่อน', 'system');
+    return;
+  }
+
+  // ITEM ...
+  if (cmd === 'ITEM') {
+    if (arg1 === 'ADD') { cmdItemAdd(parts.slice(0)); return; }
+    if (arg1 === 'EDIT') { cmdItemEdit(parts.slice(0)); return; }
+    if (arg1 === 'DEL' || arg1 === 'DELETE' || arg1 === 'RM') { cmdItemDel(parts.slice(0)); return; }
+    if (arg1 === 'LIST' || arg1 === 'LS') { cmdItemList(parts.slice(2).join(' ')); return; }
+    if (arg1 === 'VIEW' || arg1 === 'SHOW') { cmdItemView(parts[2]); return; }
+    if (arg1 === 'SEARCH' || arg1 === 'FIND') { cmdItemSearch(parts.slice(2).join(' ')); return; }
+    print('ITEM ADD|EDIT|DEL|LIST|VIEW|SEARCH', 'warn');
+    return;
+  }
+  if (cmd === 'ITEMS' || (cmd === 'LIST' && arg1 === 'ITEM')) { cmdItemList(''); return; }
+  if (cmd === 'LOWSTOCK' || cmd === 'LOW') { cmdLowStock(); return; }
+
+  if (cmd === 'STOCK') {
+    if (['IN','OUT','SET'].includes(arg1)) { cmdStock(arg1, parts.slice(1)); return; }
+    print('STOCK IN|OUT|SET <code> <qty> [note]', 'warn');
+    return;
+  }
+
+  // SALE / BUY
+  if (cmd === 'SALE' || cmd === 'SELL') {
+    startSaleWizard(parts.slice(1));
+    return;
+  }
+  if (cmd === 'BUY' || cmd === 'PURCHASE') {
+    startBuyWizard(parts.slice(1));
+    return;
+  }
+
+  if (cmd === 'RECEIPT' || cmd === 'RC') {
+    if (arg1 === 'LIST' || arg1 === 'LS') {
+      listReceipts(parseInt(parts[2], 10) || 15);
+      return;
+    }
+    showReceipt(parts[1] || 'LAST');
+    return;
+  }
+  if (cmd === 'PRINT' || cmd === 'PR' || cmd === 'พิมพ์') {
+    printReceipt(parts[1] || 'LAST');
+    return;
+  }
+  if (cmd === 'LAST') {
+    showReceipt('LAST');
+    return;
+  }
+  if (cmd === 'REPRINT') {
+    printReceipt(parts[1] || 'LAST');
+    return;
+  }
+
+  // REPORT
+  if (cmd === 'REPORT' || cmd === 'REP') {
+    if (arg1 === 'DAY' || arg1 === 'DAILY') { reportDay(parts[2]); return; }
+    if (arg1 === 'MONTH' || arg1 === 'MON') { reportMonth(parts[2]); return; }
+    if (arg1 === 'ITEM') { reportItem(parts[2]); return; }
+    if (arg1 === 'LOW') { cmdLowStock(); return; }
+    // default today
+    reportDay();
+    return;
+  }
+
+  if (cmd === 'TXN' || cmd === 'TXNS') {
+    if (arg1 === 'LIST' || arg1 === 'LS' || !arg1) { cmdTxnList(parts.slice(arg1 ? 1 : 0)); return; }
+    if (arg1 === 'VIEW') {
+      const t = findTxn(parts[2]);
+      if (!t) { print('ไม่พบ', 'warn'); return; }
+      showReceipt(t.ref);
+      return;
+    }
+    print('TXN LIST | TXN VIEW <ref>', 'warn');
+    return;
+  }
+
+  print(t('unknown_cmd'), 'warn');
+}
+
+// ---------- Boot / Lang ----------
+function showLangSelect() {
+  clearScreen();
+  print('ALGOR LEDGER', 'logo');
+  print('small computer · real books', 'system');
+  print('', 'system');
+  print('เลือกภาษา / Choose language', 'header');
+  print('  1  ไทย', 'out');
+  print('  2  English', 'out');
+  setMode('BOOT');
+}
+
+function showBoot() {
+  clearScreen();
+  print('╔══════════════════════════════════════════╗', 'logo');
+  print('║          ALGOR LEDGER  v1.0              ║', 'logo');
+  print('║     small computer · real books          ║', 'logo');
+  print('╚══════════════════════════════════════════╝', 'logo');
+  print('', 'system');
+  print(LANG === 'th'
+    ? 'ระบบบัญชี + สินค้าคงคลัง แบบ CLI สำหรับร้านเล็ก'
+    : 'CLI inventory & books for small shops', 'system');
+  print(LANG === 'th'
+    ? 'Offline · เข้ารหัส · ไม่พึ่ง cloud'
+    : 'Offline · encrypted · no cloud', 'system');
+  print('', 'system');
+  showMainMenu();
+  print('', 'system');
+  print(LANG === 'th'
+    ? 'เริ่ม: MODE OWNER → SETPASS → SETNAME → ITEM ADD ...'
+    : 'Start: MODE OWNER → SETPASS → SETNAME → ITEM ADD ...', 'system');
+  print(LANG === 'th'
+    ? 'หรือพิมพ์ MODE GUI / กด F7 สำหรับหน้าต่างกราฟิก'
+    : 'Or type MODE GUI / press F7 for graphical UI', 'system');
+}
+
+// ---------- Input & keys ----------
+CMD.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const v = CMD.value;
+    CMD.value = '';
+    await handleCommand(v);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (cmdHistIdx > 0) {
+      cmdHistIdx--;
+      CMD.value = cmdHistory[cmdHistIdx] || '';
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (cmdHistIdx < cmdHistory.length - 1) {
+      cmdHistIdx++;
+      CMD.value = cmdHistory[cmdHistIdx] || '';
+    } else {
+      cmdHistIdx = cmdHistory.length;
+      CMD.value = '';
+    }
+  } else if (e.key === 'F1') { e.preventDefault(); handleCommand('HELP'); }
+  else if (e.key === 'F2') { e.preventDefault(); handleCommand('MENU'); }
+  else if (e.key === 'F5') { e.preventDefault(); handleCommand('STATUS'); }
+  else if (e.key === 'F6') { e.preventDefault(); handleCommand('ITEM LIST'); }
+  else if (e.key === 'F7') {
+    e.preventDefault();
+    if (document.body.classList.contains('gui-on')) leaveGuiMode();
+    else enterGuiMode();
+  }
+  else if (e.key === 'F8') { e.preventDefault(); handleCommand('SALE'); }
+  else if (e.key === 'F9') { e.preventDefault(); handleCommand('REPORT DAY'); }
+  else if (e.key === 'F10') { e.preventDefault(); handleCommand('LOCK'); }
+  else if (e.key === 'F12') {
+    e.preventDefault();
+    if (wizard) {
+      wizard = null;
+      setMode(mode);
+      print(LANG === 'th' ? 'ยกเลิกแล้ว' : 'Cancelled', 'warn');
+    } else {
+      CMD.value = '';
+    }
+  }
+  else if (e.key === 'Escape') { CMD.value = ''; }
+});
+
+// Focus CLI only when not in GUI
+document.addEventListener('click', (e) => {
+  if (document.body.classList.contains('gui-on')) return;
+  if (e.target.closest && e.target.closest('#gui-root')) return;
+  CMD.focus();
+});
+CMD.focus();
+
+// Start
+if (LANG) showBoot();
+else showLangSelect();
+</script>
+</body>
+</html>
