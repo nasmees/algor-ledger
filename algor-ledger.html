@@ -6,7 +6,7 @@
 <title>ALGOR // LEDGER</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-  :root {
+  :root, [data-theme="amber"] {
     --green: #ffb000;
     --green-bright: #ffd27a;
     --green-dim: #8a5a12;
@@ -17,6 +17,92 @@
     --red: #ff6a3d;
     --blue: #e8c36a;
     --panel: #160e06;
+    --tag-fg: #100a04;
+    --scan: rgba(0,0,0,0.18);
+  }
+  [data-theme="green"] {
+    --green: #33ff66;
+    --green-bright: #99ffbb;
+    --green-dim: #1a8838;
+    --green-dark: #0a3d18;
+    --bg: #020a04;
+    --amber: #88ffaa;
+    --cyan: #66ee99;
+    --red: #ff5555;
+    --blue: #66ee99;
+    --panel: #041208;
+    --tag-fg: #020a04;
+    --scan: rgba(0,0,0,0.2);
+  }
+  [data-theme="cyan"] {
+    --green: #00e5ff;
+    --green-bright: #9af6ff;
+    --green-dim: #0088aa;
+    --green-dark: #003344;
+    --bg: #03080c;
+    --amber: #ffb000;
+    --cyan: #66f0ff;
+    --red: #ff6a6a;
+    --blue: #00e5ff;
+    --panel: #071018;
+    --tag-fg: #03080c;
+    --scan: rgba(0,0,0,0.15);
+  }
+  [data-theme="ibm"] {
+    --green: #5c9ce6;
+    --green-bright: #b8d4f5;
+    --green-dim: #3a6a9e;
+    --green-dark: #1a3555;
+    --bg: #0a1020;
+    --amber: #f0c14a;
+    --cyan: #7eb6e8;
+    --red: #e07070;
+    --blue: #5c9ce6;
+    --panel: #121c30;
+    --tag-fg: #0a1020;
+    --scan: rgba(0,0,0,0.12);
+  }
+  [data-theme="paper"] {
+    --green: #2a2a2a;
+    --green-bright: #000000;
+    --green-dim: #6a6a6a;
+    --green-dark: #b0b0b0;
+    --bg: #f4f0e6;
+    --amber: #8b5a00;
+    --cyan: #1a4a6a;
+    --red: #b00020;
+    --blue: #1a4a6a;
+    --panel: #e8e2d4;
+    --tag-fg: #f4f0e6;
+    --scan: rgba(0,0,0,0.04);
+  }
+  [data-theme="violet"] {
+    --green: #d4a0ff;
+    --green-bright: #f0d4ff;
+    --green-dim: #7a4aa0;
+    --green-dark: #3a2050;
+    --bg: #0c0614;
+    --amber: #ffb060;
+    --cyan: #c090ff;
+    --red: #ff7090;
+    --blue: #d4a0ff;
+    --panel: #140a1c;
+    --tag-fg: #0c0614;
+    --scan: rgba(0,0,0,0.2);
+  }
+  [data-theme="red"] {
+    --green: #ff5544;
+    --green-bright: #ffaa99;
+    --green-dim: #992211;
+    --green-dark: #4a1008;
+    --bg: #100404;
+    --amber: #ff9944;
+    --cyan: #ff8877;
+    --red: #ff2200;
+    --blue: #ff8877;
+    --panel: #1a0808;
+    --tag-fg: #100404;
+    --scan: rgba(0,0,0,0.2);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -33,7 +119,7 @@
   #topbar .sysname { color: var(--green-bright); letter-spacing: 1.5px; font-weight: 600; }
   #topbar .info { color: var(--green); }
   #topbar .mode-tag {
-    background: var(--green); color: #000; padding: 2px 10px; font-weight: 600;
+    background: var(--green); color: var(--tag-fg); padding: 2px 10px; font-weight: 600;
     border-radius: 2px;
   }
   #topbar .clock { color: var(--green-dim); margin-left: 12px; }
@@ -46,7 +132,7 @@
     scrollbar-width: thin; scrollbar-color: var(--green-dim) var(--bg);
   }
   #terminal::-webkit-scrollbar { width: 8px; }
-  #terminal::-webkit-scrollbar-track { background: #001100; }
+  #terminal::-webkit-scrollbar-track { background: var(--panel); }
   #terminal::-webkit-scrollbar-thumb { background: var(--green-dim); }
   .line { margin-bottom: 2px; white-space: pre-wrap; word-break: break-word; }
   .line.system { color: var(--green-dim); }
@@ -77,7 +163,7 @@
   #file-input, #import-input { display: none; }
   body::after {
     content: ""; position: fixed; inset: 0;
-    background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, var(--scan) 2px, var(--scan) 4px);
     pointer-events: none; z-index: 50;
   }
 
@@ -98,7 +184,7 @@
 
   .gui-titlebar {
     background: var(--green);
-    color: #100a04;
+    color: var(--tag-fg);
     padding: 6px 10px;
     font-weight: 600;
     font-size: 13px;
@@ -109,7 +195,7 @@
   }
   .gui-titlebar button {
     font-family: inherit; font-size: 11px; font-weight: 600;
-    background: #100a04; color: var(--green);
+    background: var(--bg); color: var(--green);
     border: 1px solid #000; padding: 3px 12px; cursor: pointer;
   }
   .gui-titlebar button:hover { background: var(--green-dark); }
@@ -158,7 +244,7 @@
   }
   .gui-btn:active { border-style: inset; }
   .gui-btn:hover { background: #2a1a08; }
-  .gui-btn.primary { background: var(--green); color: #100a04; border-color: var(--green-bright); }
+  .gui-btn.primary { background: var(--green); color: var(--tag-fg); border-color: var(--green-bright); }
   .gui-btn.primary:hover { background: var(--green-bright); }
   .gui-btn.danger { color: var(--red); border-color: #994433; }
 
@@ -168,21 +254,86 @@
     font-size: 13px; white-space: pre-wrap; word-break: break-word;
     color: var(--green);
   }
+  .gui-out:has(.g-table), .gui-out:has(.g-empty) { white-space: normal; }
   .gui-status {
     border-top: 1px solid var(--green-dark);
     padding: 4px 10px; font-size: 11px; color: var(--green-dim);
     background: #0c0804;
   }
   .gui-hint { font-size: 11px; color: var(--green-dim); margin-top: 6px; }
-  .gui-table {
-    width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px;
+
+  /* CSS Grid data tables — stable columns with Thai text */
+  .g-table {
+    display: grid;
+    width: 100%;
+    gap: 0;
+    font-size: 12px;
+    border: 1px solid var(--green-dark);
   }
-  .gui-table th, .gui-table td {
-    border: 1px solid var(--green-dark); padding: 5px 8px; text-align: left;
+  .g-table.cols-4 {
+    grid-template-columns:
+      minmax(64px, 0.7fr)
+      minmax(100px, 2.2fr)
+      minmax(72px, 0.9fr)
+      minmax(56px, 0.7fr);
   }
-  .gui-table th { color: var(--cyan); background: #0c0804; }
-  .gui-table td.num { text-align: right; color: var(--amber); }
-  .gui-cart-total { font-size: 16px; color: var(--amber); font-weight: 600; margin: 8px 0; }
+  .g-table.cols-cart {
+    grid-template-columns:
+      36px
+      minmax(100px, 1fr)
+      minmax(48px, 0.55fr)
+      minmax(72px, 0.8fr);
+  }
+  .g-table.cols-txn {
+    grid-template-columns:
+      minmax(110px, 1.2fr)
+      minmax(70px, 0.7fr)
+      minmax(80px, 0.9fr);
+  }
+  .g-head, .g-row { display: contents; }
+  .g-head > span {
+    background: #0c0804;
+    color: var(--cyan);
+    font-weight: 600;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--green);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .g-row > span {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--green-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .g-row:hover > span { background: rgba(255, 176, 0, 0.06); }
+  .g-num {
+    text-align: right;
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+  }
+  .g-empty {
+    color: var(--green-dim);
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  .gui-cart-total {
+    font-size: 16px; color: var(--amber); font-weight: 600; margin: 8px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 520px) {
+    .g-table.cols-4 {
+      grid-template-columns: 56px 1fr 64px 48px;
+      font-size: 11px;
+    }
+    .g-table.cols-cart {
+      grid-template-columns: 28px 1fr 40px 64px;
+      font-size: 11px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -323,6 +474,19 @@
             <input type="checkbox" id="gui-autoprint"> พิมพ์ใบเสร็จอัตโนมัติหลังขาย
           </label>
         </div>
+        <div class="gui-label" style="margin-top:12px">Theme UI</div>
+        <div class="gui-row" id="gui-theme-row" style="gap:6px">
+          <select class="gui-input" id="gui-theme" style="max-width:220px;min-height:36px">
+            <option value="amber">1 Amber CRT</option>
+            <option value="green">2 Green CRT</option>
+            <option value="cyan">3 Cyan MCC</option>
+            <option value="ibm">4 IBM Blue</option>
+            <option value="paper">5 Paper</option>
+            <option value="violet">6 Violet</option>
+            <option value="red">7 Red Alert</option>
+          </select>
+          <button type="button" class="gui-btn primary" id="gui-theme-btn">Apply</button>
+        </div>
         <div class="gui-label" style="margin-top:12px">Status</div>
         <div class="gui-out" id="gui-sys-out">—</div>
         <div class="gui-row" style="margin-top:10px">
@@ -347,6 +511,90 @@ const FILE_INPUT = document.getElementById('file-input');
 const CLOCK = document.getElementById('clock');
 
 let LANG = localStorage.getItem('algor_ledger_lang') || null;
+
+const THEMES = {
+  amber:  { id: 'amber',  n: 1, name: 'Amber CRT',  nameTh: 'อำพัน CRT' },
+  green:  { id: 'green',  n: 2, name: 'Green CRT',  nameTh: 'เขียว CRT' },
+  cyan:   { id: 'cyan',   n: 3, name: 'Cyan MCC',   nameTh: 'ฟ้า Mission' },
+  ibm:    { id: 'ibm',    n: 4, name: 'IBM Blue',   nameTh: 'IBM น้ำเงิน' },
+  paper:  { id: 'paper',  n: 5, name: 'Paper',      nameTh: 'กระดาษ' },
+  violet: { id: 'violet', n: 6, name: 'Violet',     nameTh: 'ม่วง' },
+  red:    { id: 'red',    n: 7, name: 'Red Alert',  nameTh: 'แดงเตือน' }
+};
+const THEME_ORDER = ['amber', 'green', 'cyan', 'ibm', 'paper', 'violet', 'red'];
+let currentTheme = localStorage.getItem('algor_ledger_theme') || 'amber';
+
+function applyTheme(id, silent) {
+  const key = String(id || '').toLowerCase();
+  let t = THEMES[key];
+  if (!t) {
+    const n = parseInt(key, 10);
+    if (n >= 1 && n <= 7) t = THEMES[THEME_ORDER[n - 1]];
+  }
+  if (!t) return false;
+  currentTheme = t.id;
+  document.documentElement.setAttribute('data-theme', t.id);
+  try { localStorage.setItem('algor_ledger_theme', t.id); } catch (e) {}
+  const sel = document.getElementById('gui-theme');
+  if (sel) sel.value = t.id;
+  if (!silent) {
+    const label = LANG === 'th' ? t.nameTh : t.name;
+    print((LANG === 'th' ? 'ธีม: ' : 'Theme: ') + t.n + ' · ' + label, 'system');
+  }
+  return true;
+}
+let themePick = false;
+
+function listThemes(enterPick) {
+  const W = 40;
+  print(boxRule(W), 'menu');
+  print(boxLine(centerPad(LANG === 'th' ? 'เลือกธีม UI' : 'SELECT UI THEME', W), W), 'menu');
+  print(boxRule(W), 'menu');
+  THEME_ORDER.forEach(id => {
+    const t = THEMES[id];
+    const mark = id === currentTheme ? ' ◀' : '';
+    const label = LANG === 'th' ? t.nameTh : t.name;
+    const row = padRight('  ' + t.n + '. ' + t.id, 14) + ' ' + clipVis(label + mark, W - 15);
+    print(boxLine(row, W), 'menu');
+  });
+  print(boxRule(W), 'menu');
+  if (enterPick) {
+    themePick = true;
+    PROMPT_LABEL.textContent = LANG === 'th' ? 'THEME>' : 'THEME>';
+    CMD.placeholder = LANG === 'th' ? 'พิมพ์เลข 1-7 แล้ว Enter' : 'Type 1-7 then Enter';
+    print(LANG === 'th'
+      ? 'พิมพ์เลข 1-7 แล้วกด Enter (0 หรือ ESC = ยกเลิก)'
+      : 'Type 1-7 and Enter (0 or ESC = cancel)', 'system');
+  } else {
+    print('THEME 1-7   หรือ   THEME amber|green|...', 'system');
+  }
+}
+
+function cancelThemePick() {
+  if (!themePick) return;
+  themePick = false;
+  setMode(mode);
+  print(LANG === 'th' ? 'ยกเลิกเลือกธีม' : 'Theme pick cancelled', 'warn');
+}
+
+function pickThemeByInput(input) {
+  const v = String(input || '').trim().toLowerCase();
+  if (v === '0' || v === 'c' || v === 'cancel' || v === 'esc') {
+    cancelThemePick();
+    return true;
+  }
+  if (applyTheme(v)) {
+    themePick = false;
+    setMode(mode);
+    beep(true);
+    return true;
+  }
+  print(LANG === 'th' ? 'เลือก 1-7 เท่านั้น' : 'Choose 1-7 only', 'warn');
+  return true;
+}
+
+applyTheme(currentTheme, true);
+
 let mode = 'BOOT';           // BOOT | OWNER | STAFF | VIEW
 let vault = null;
 let masterPassword = null;
@@ -657,11 +905,59 @@ async function loadVaultFile() {
   FILE_INPUT.click();
 }
 
-// ---------- Receipt ----------
+// ---------- Text layout (Thai-safe visual width) ----------
+// Thai/CJK often render wider than ASCII in monospace → pad by visual cols
+function charVisWidth(ch) {
+  if (!ch) return 0;
+  const c = ch.codePointAt(0);
+  // combining marks / zero-width
+  if ((c >= 0x0E31 && c <= 0x0E3A) || (c >= 0x0E47 && c <= 0x0E4E) || c === 0x0E3F) return 0;
+  if (c <= 0x1F || (c >= 0x7F && c <= 0x9F)) return 0;
+  // Thai, CJK, fullwidth forms ≈ 2 columns in terminal tables
+  if (c >= 0x0E00 && c <= 0x0E7F) return 1; // IBM Plex Mono Thai ≈ 1 cell
+  if (c >= 0x1100 && c <= 0x115F) return 2;
+  if (c >= 0x2E80 && c <= 0xA4CF) return 2;
+  if (c >= 0xAC00 && c <= 0xD7A3) return 2;
+  if (c >= 0xF900 && c <= 0xFAFF) return 2;
+  if (c >= 0xFE10 && c <= 0xFE6F) return 2;
+  if (c >= 0xFF00 && c <= 0xFF60) return 2;
+  if (c >= 0xFFE0 && c <= 0xFFE6) return 2;
+  return 1;
+}
+function visLen(s) {
+  let n = 0;
+  for (const ch of String(s || '')) n += charVisWidth(ch);
+  return n;
+}
+function clipVis(s, maxW) {
+  let out = '', w = 0;
+  for (const ch of String(s || '')) {
+    const cw = charVisWidth(ch);
+    if (w + cw > maxW) break;
+    out += ch;
+    w += cw;
+  }
+  return out;
+}
+function padRight(s, w) {
+  const t = clipVis(s, w);
+  return t + ' '.repeat(Math.max(0, w - visLen(t)));
+}
+function padLeft(s, w) {
+  const t = clipVis(s, w);
+  return ' '.repeat(Math.max(0, w - visLen(t))) + t;
+}
 function centerPad(s, W) {
-  const t = String(s || '').slice(0, W);
-  const left = Math.max(0, Math.floor((W - t.length) / 2));
-  return (' '.repeat(left) + t).padEnd(W);
+  const t = clipVis(s, W);
+  const gap = Math.max(0, W - visLen(t));
+  const left = Math.floor(gap / 2);
+  return ' '.repeat(left) + t + ' '.repeat(gap - left);
+}
+function boxLine(inner, W) {
+  return '|' + padRight(inner, W) + '|';
+}
+function boxRule(W, ch) {
+  return '+' + (ch || '-').repeat(W) + '+';
 }
 function moneyPlain(n) {
   return Number(n || 0).toFixed(2);
@@ -674,59 +970,51 @@ function buildReceiptText(txn) {
   const phone = vault.phone || '';
   const tax = vault.taxId || '';
   const lines = [];
-  const W = 42;
-  const hr = '─'.repeat(W);
-  const dash = '-'.repeat(W);
-  lines.push('┌' + '─'.repeat(W) + '┐');
-  lines.push('│' + centerPad(store, W) + '│');
+  // Width tuned for 80mm / screen: content 40 cols + borders
+  const W = 40;
+  lines.push(boxRule(W));
+  lines.push(boxLine(centerPad(store, W), W));
   if (addr) {
-    // wrap address if long
-    const a = addr;
-    for (let i = 0; i < a.length; i += W) {
-      lines.push('│' + centerPad(a.slice(i, i + W), W) + '│');
+    let rest = addr;
+    while (rest.length) {
+      const chunk = clipVis(rest, W);
+      lines.push(boxLine(centerPad(chunk, W), W));
+      rest = rest.slice(chunk.length);
     }
   }
-  if (phone) lines.push('│' + centerPad('Tel: ' + phone, W) + '│');
-  if (tax) lines.push('│' + centerPad('TAX ID ' + tax, W) + '│');
-  lines.push('├' + hr + '┤');
-  const title = txn.type === 'sale' ? 'ใบเสร็จรับเงิน / RECEIPT' :
-                txn.type === 'purchase' ? 'ใบรับสินค้า / PURCHASE' : txn.type.toUpperCase();
-  lines.push('│' + title.padEnd(W).slice(0, W) + '│');
-  lines.push('│' + (`เลขที่ ${txn.ref}`).padEnd(W).slice(0, W) + '│');
-  lines.push('│' + (`วันที่ ${txn.date}`).padEnd(W).slice(0, W) + '│');
-  if (txn.contact_name) {
-    lines.push('│' + (`ลูกค้า: ${txn.contact_name}`).padEnd(W).slice(0, W) + '│');
-  }
-  lines.push('├' + hr + '┤');
-  lines.push('│' + 'รายการ'.padEnd(18) + 'จำนวน'.padStart(5) + 'ราคา'.padStart(8) + 'รวม'.padStart(9) + '│');
-  lines.push('│' + dash + '│');
+  if (phone) lines.push(boxLine(centerPad('Tel: ' + phone, W), W));
+  if (tax) lines.push(boxLine(centerPad('TAX ID ' + tax, W), W));
+  lines.push(boxRule(W));
+  const title = txn.type === 'sale' ? 'RECEIPT / ใบเสร็จรับเงิน' :
+                txn.type === 'purchase' ? 'PURCHASE / ใบรับสินค้า' : String(txn.type || '').toUpperCase();
+  lines.push(boxLine(title, W));
+  lines.push(boxLine('No.  ' + txn.ref, W));
+  lines.push(boxLine('Date ' + txn.date, W));
+  if (txn.contact_name) lines.push(boxLine(clipVis('To: ' + txn.contact_name, W), W));
+  lines.push(boxRule(W));
 
+  // Stacked lines: name on one row, qty x price = amt on next → always aligned
   (txn.lines || []).forEach(ln => {
-    const name = (ln.name || ln.code || '').slice(0, 18).padEnd(18);
-    const qty = String(ln.qty).padStart(5);
-    const price = moneyPlain(ln.price).padStart(8);
-    const amt = moneyPlain(ln.qty * ln.price).padStart(9);
-    lines.push('│' + (name + qty + ' ' + price + amt).slice(0, W).padEnd(W) + '│');
+    const name = ln.name || ln.code || '';
+    lines.push(boxLine(clipVis(name, W), W));
+    const detail = '  ' + ln.qty + ' x ' + moneyPlain(ln.price) + ' = ' + moneyPlain(ln.qty * ln.price);
+    lines.push(boxLine(padLeft(detail, W), W));
   });
 
-  lines.push('├' + hr + '┤');
+  lines.push(boxRule(W));
   const itemCount = (txn.lines || []).reduce((s, l) => s + Number(l.qty || 0), 0);
-  lines.push('│' + (`จำนวนชิ้น ${itemCount}`).padEnd(W).slice(0, W) + '│');
-  lines.push('│' + (`รวมทั้งสิ้น / TOTAL`).padEnd(W - 10) + moneyPlain(txn.total).padStart(10) + '│');
+  lines.push(boxLine('Items: ' + itemCount, W));
+  lines.push(boxLine(padRight('TOTAL', W - 12) + padLeft(moneyPlain(txn.total), 12), W));
   if (txn.payment) {
-    const pay = txn.payment === 'cash' ? 'เงินสด/CASH' :
-                txn.payment === 'transfer' ? 'โอน/TRANSFER' : 'เครดิต/CREDIT';
-    lines.push('│' + (`ชำระ: ${pay}`).padEnd(W).slice(0, W) + '│');
-    if (txn.payment !== 'credit' && txn.paid != null) {
-      lines.push('│' + (`รับเงิน: ${moneyPlain(txn.paid)}`).padEnd(W).slice(0, W) + '│');
-    }
+    const pay = txn.payment === 'cash' ? 'CASH / เงินสด' :
+                txn.payment === 'transfer' ? 'TRANSFER / โอน' : 'CREDIT / เครดิต';
+    lines.push(boxLine('Pay: ' + pay, W));
   }
-  if (txn.note) lines.push('│' + (`หมายเหตุ: ${txn.note}`).padEnd(W).slice(0, W) + '│');
-  lines.push('└' + '─'.repeat(W) + '┘');
-  lines.push('');
+  if (txn.note) lines.push(boxLine(clipVis('Note: ' + txn.note, W), W));
+  lines.push(boxRule(W));
   const foot = (vault.footer || '').trim() || (LANG === 'th' ? 'ขอบคุณที่อุดหนุน' : 'Thank you');
-  lines.push(centerPad(foot, W));
-  lines.push(centerPad('ALGOR LEDGER', W));
+  lines.push(centerPad(foot, W + 2));
+  lines.push(centerPad('ALGOR LEDGER', W + 2));
   return lines;
 }
 
@@ -959,19 +1247,15 @@ function cmdItemList(filter) {
   if (!vault?.items?.length) { print(t('no_data'), 'warn'); return; }
   const list = vault.items.filter(i => i.active !== false);
   if (!list.length) { print(t('no_data'), 'warn'); return; }
-  print('CODE     NAME                      UNIT    COST      PRICE     QTY', 'header');
-  print('─'.repeat(70), 'system');
+  // Two-line rows: avoids Thai width drift in multi-column tables
+  print(padRight('CODE', 8) + '  ' + padRight('NAME', 22) + padLeft('PRICE', 10) + padLeft('QTY', 7), 'header');
+  print('-'.repeat(50), 'system');
   list.forEach(i => {
     if (filter && !(`${i.code} ${i.name}`.toLowerCase().includes(filter.toLowerCase()))) return;
-    const row = [
-      i.code.padEnd(8),
-      i.name.slice(0, 24).padEnd(24),
-      (i.unit || '').slice(0, 6).padEnd(6),
-      money(i.cost).padStart(9),
-      money(i.price).padStart(9),
-      String(i.qty).padStart(6)
-    ].join(' ');
-    print(row, i.qty <= (i.min_qty || 0) ? 'warn' : 'out');
+    const row1 = padRight(i.code, 8) + '  ' + padRight(clipVis(i.name, 22), 22) +
+      padLeft(moneyPlain(i.price), 10) + padLeft(String(i.qty), 7);
+    print(row1, i.qty <= (i.min_qty || 0) ? 'warn' : 'out');
+    print('  ' + padRight(clipVis((i.unit || '') + '  cost ' + moneyPlain(i.cost), 46), 46), 'system');
   });
   print(`รวม ${list.length} รายการ`, 'system');
 }
@@ -1316,19 +1600,36 @@ function showStatus() {
 }
 
 function showMainMenu() {
-  print('┌─────────────────────────────────────────────┐', 'menu');
-  print('│           ALGOR LEDGER — MENU               │', 'menu');
-  print('├─────────────────────────────────────────────┤', 'menu');
-  print('│  1. MODE OWNER     เจ้าของร้าน              │', 'menu');
-  print('│  2. MODE STAFF     พนักงานขาย               │', 'menu');
-  print('│  3. LOAD           โหลด vault               │', 'menu');
-  print('│  4. SAVE           บันทึก vault             │', 'menu');
-  print('│  5. STATUS         สถานะ                    │', 'menu');
-  print('│  6. HELP           คำสั่งทั้งหมด            │', 'menu');
-  print('│  7. LANG           เปลี่ยนภาษา              │', 'menu');
-  print('│  9. MODE GUI       หน้าต่างกราฟิก           │', 'menu');
-  print('│  0. CLEAR          ล้างหน้าจอ               │', 'menu');
-  print('└─────────────────────────────────────────────┘', 'menu');
+  const W = 44;
+  const rows = LANG === 'th' ? [
+    ['1', 'MODE OWNER', 'เจ้าของร้าน'],
+    ['2', 'MODE STAFF', 'พนักงานขาย'],
+    ['3', 'LOAD', 'โหลด vault'],
+    ['4', 'SAVE', 'บันทึก vault'],
+    ['5', 'STATUS', 'สถานะ'],
+    ['6', 'HELP', 'คำสั่งทั้งหมด'],
+    ['7', 'LANG', 'เปลี่ยนภาษา'],
+    ['9', 'MODE GUI', 'หน้าต่างกราฟิก'],
+    ['0', 'CLEAR', 'ล้างหน้าจอ']
+  ] : [
+    ['1', 'MODE OWNER', 'Owner'],
+    ['2', 'MODE STAFF', 'Staff'],
+    ['3', 'LOAD', 'Load vault'],
+    ['4', 'SAVE', 'Save vault'],
+    ['5', 'STATUS', 'Status'],
+    ['6', 'HELP', 'All commands'],
+    ['7', 'LANG', 'Language'],
+    ['9', 'MODE GUI', 'Graphical UI'],
+    ['0', 'CLEAR', 'Clear screen']
+  ];
+  print(boxRule(W), 'menu');
+  print(boxLine(centerPad('ALGOR LEDGER — MENU', W), W), 'menu');
+  print(boxRule(W), 'menu');
+  rows.forEach(([n, cmd, desc]) => {
+    const left = padRight('  ' + n + '. ' + cmd, 18);
+    print(boxLine(left + ' ' + clipVis(desc, W - 19), W), 'menu');
+  });
+  print(boxRule(W), 'menu');
 }
 
 function showFullHelp() {
@@ -1349,6 +1650,7 @@ function showFullHelp() {
   print('ใบเสร็จ: RECEIPT [ref|LAST]   PRINT [ref|LAST]', 'out');
   print('         RECEIPT LIST   SETPRINT ON|OFF', 'out');
   print('         SETPHONE SETTAXID SETFOOTER', 'out');
+  print('ธีม UI: THEME | THEME LIST | THEME 1-7 | amber green cyan ibm paper violet red', 'out');
   print('', 'system');
   print('รายงาน: REPORT DAY [YYYY-MM-DD]', 'out');
   print('       REPORT MONTH [YYYY-MM]', 'out');
@@ -1411,17 +1713,26 @@ function guiRefreshItems() {
     });
   }
   if (listOut) {
-    if (!items.length) listOut.textContent = LANG === 'th' ? 'ยังไม่มีสินค้า' : 'No items';
-    else {
-      const rows = ['CODE     NAME                      PRICE      QTY'];
+    if (!items.length) {
+      listOut.innerHTML = '<div class="g-empty">' + (LANG === 'th' ? 'ยังไม่มีสินค้า' : 'No items') + '</div>';
+    } else {
+      let h = '<div class="g-table cols-4"><div class="g-head">' +
+        '<span>CODE</span><span>NAME</span><span class="g-num">PRICE</span><span class="g-num">QTY</span></div>';
       items.forEach(i => {
-        rows.push(
-          `${(i.code + '        ').slice(0, 8)} ${(i.name + '                        ').slice(0, 24)} ${money(i.price).padStart(9)} ${String(i.qty).padStart(6)}`
-        );
+        h += '<div class="g-row">' +
+          '<span>' + escHtml(i.code) + '</span>' +
+          '<span title="' + escHtml(i.name) + '">' + escHtml(i.name) + '</span>' +
+          '<span class="g-num">' + money(i.price) + '</span>' +
+          '<span class="g-num">' + i.qty + '</span></div>';
       });
-      listOut.textContent = rows.join('\n');
+      h += '</div>';
+      listOut.innerHTML = h;
     }
   }
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function guiRenderCart() {
@@ -1429,13 +1740,21 @@ function guiRenderCart() {
   const tot = document.getElementById('gui-cart-total');
   if (!el) return;
   if (!guiCart.length) {
-    el.textContent = '—';
+    el.innerHTML = '<div class="g-empty">—</div>';
     if (tot) tot.textContent = 'TOTAL: 0.00';
     return;
   }
-  el.textContent = guiCart.map((l, i) =>
-    `${i + 1}. ${l.code} ${l.name}  x${l.qty}  = ${money(l.qty * l.price)}`
-  ).join('\n');
+  let h = '<div class="g-table cols-cart"><div class="g-head">' +
+    '<span>#</span><span>ITEM</span><span class="g-num">QTY</span><span class="g-num">AMT</span></div>';
+  guiCart.forEach((l, i) => {
+    h += '<div class="g-row">' +
+      '<span>' + (i + 1) + '</span>' +
+      '<span title="' + escHtml(l.code + ' ' + l.name) + '">' + escHtml(l.code) + ' ' + escHtml(l.name) + '</span>' +
+      '<span class="g-num">' + l.qty + '</span>' +
+      '<span class="g-num">' + money(l.qty * l.price) + '</span></div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
   const sum = guiCart.reduce((s, l) => s + l.qty * l.price, 0);
   if (tot) tot.textContent = 'TOTAL: ' + money(sum);
 }
@@ -1500,6 +1819,7 @@ function guiShowStatus() {
     `Txns    : ${(vault.txns || []).length}`,
     `Sales today : ${money(sum)} (${todaySales.length} bills)`,
     `Unlocked: ${masterPassword ? 'YES' : 'NO'}`,
+    `Theme   : ${currentTheme}`,
     `Unsaved : ${dirty ? 'YES' : 'no'}`,
     `Updated : ${vault.updated || '-'}`
   ].join('\n');
@@ -1520,8 +1840,8 @@ function guiShowStatus() {
 
 function guiRunReport(kind) {
   const out = document.getElementById('gui-report-out');
-  if (!out || !vault) { if (out) out.textContent = 'No store'; return; }
-  const lines = [];
+  if (!out || !vault) { if (out) out.innerHTML = '<div class="g-empty">No store</div>'; return; }
+
   if (kind === 'day' || kind === 'month') {
     const key = kind === 'month' ? today().slice(0, 7) : today();
     const txns = (vault.txns || []).filter(t => (t.date || '').startsWith(key));
@@ -1532,25 +1852,49 @@ function guiRunReport(kind) {
         (t.lines || []).forEach(l => cos += (l.cost || 0) * l.qty);
       } else if (t.type === 'purchase') purchases += t.total;
     });
-    lines.push(kind === 'month' ? `── MONTH ${key} ──` : `── DAY ${key} ──`);
-    lines.push(`Sales bills : ${txns.filter(t => t.type === 'sale').length}`);
-    lines.push(`Sales total : ${money(sales)}`);
-    lines.push(`COGS        : ${money(cos)}`);
-    lines.push(`Gross profit: ${money(sales - cos)}`);
-    lines.push(`Purchases   : ${money(purchases)}`);
+    const title = kind === 'month' ? 'MONTH ' + key : 'DAY ' + key;
+    out.textContent = [
+      '── ' + title + ' ──',
+      'Sales bills : ' + txns.filter(t => t.type === 'sale').length,
+      'Sales total : ' + money(sales),
+      'COGS        : ' + money(cos),
+      'Gross profit: ' + money(sales - cos),
+      'Purchases   : ' + money(purchases)
+    ].join('\n');
   } else if (kind === 'txn') {
-    lines.push('REF              TYPE       TOTAL');
-    [...(vault.txns || [])].reverse().slice(0, 20).forEach(t => {
-      lines.push(`${(t.ref + '                ').slice(0, 16)} ${(t.type + '          ').slice(0, 10)} ${money(t.total)}`);
-    });
-    if (!vault.txns?.length) lines.push('(none)');
+    const list = [...(vault.txns || [])].reverse().slice(0, 20);
+    if (!list.length) {
+      out.innerHTML = '<div class="g-empty">(none)</div>';
+    } else {
+      let h = '<div class="g-table cols-txn"><div class="g-head">' +
+        '<span>REF</span><span>TYPE</span><span class="g-num">TOTAL</span></div>';
+      list.forEach(t => {
+        h += '<div class="g-row">' +
+          '<span>' + escHtml(t.ref) + '</span>' +
+          '<span>' + escHtml(t.type) + '</span>' +
+          '<span class="g-num">' + money(t.total) + '</span></div>';
+      });
+      h += '</div>';
+      out.innerHTML = h;
+    }
   } else if (kind === 'low') {
     const low = (vault.items || []).filter(i => i.active !== false && i.qty <= (i.min_qty || 0));
-    lines.push('LOW STOCK');
-    low.forEach(i => lines.push(`${i.code}  ${i.name}  qty=${i.qty}  min=${i.min_qty || 0}`));
-    if (!low.length) lines.push('(none)');
+    if (!low.length) {
+      out.innerHTML = '<div class="g-empty">LOW STOCK — (none)</div>';
+    } else {
+      let h = '<div class="g-table cols-4"><div class="g-head">' +
+        '<span>CODE</span><span>NAME</span><span class="g-num">QTY</span><span class="g-num">MIN</span></div>';
+      low.forEach(i => {
+        h += '<div class="g-row">' +
+          '<span>' + escHtml(i.code) + '</span>' +
+          '<span>' + escHtml(i.name) + '</span>' +
+          '<span class="g-num">' + i.qty + '</span>' +
+          '<span class="g-num">' + (i.min_qty || 0) + '</span></div>';
+      });
+      h += '</div>';
+      out.innerHTML = h;
+    }
   }
-  out.textContent = lines.join('\n');
   setGuiStatus('Report: ' + kind);
 }
 
@@ -1692,6 +2036,19 @@ function wireGui() {
     setGuiStatus('Auto-print: ' + (vault.autoPrint ? 'ON' : 'OFF'));
   });
   document.getElementById('gui-status-btn')?.addEventListener('click', guiShowStatus);
+  document.getElementById('gui-theme-btn')?.addEventListener('click', () => {
+    const v = document.getElementById('gui-theme')?.value || 'amber';
+    applyTheme(v);
+    setGuiStatus('Theme: ' + v);
+    beep(true);
+  });
+  document.getElementById('gui-theme')?.addEventListener('change', (e) => {
+    applyTheme(e.target.value);
+    setGuiStatus('Theme: ' + e.target.value);
+  });
+  const thSel = document.getElementById('gui-theme');
+  if (thSel) thSel.value = currentTheme;
+
 }
 wireGui();
 
@@ -1699,6 +2056,13 @@ wireGui();
 async function handleCommand(raw) {
   const input = raw.trim();
   if (!input) return;
+
+  // theme number pick (after THEME table)
+  if (themePick) {
+    print(PROMPT_LABEL.textContent + ' ' + input, 'user');
+    pickThemeByInput(input);
+    return;
+  }
 
   // wizard takes over
   if (wizard) {
@@ -1874,6 +2238,21 @@ async function handleCommand(raw) {
     }
     markDirty();
     print(`พิมพ์อัตโนมัติหลังขาย: ${vault.autoPrint ? 'ON' : 'OFF'}`, 'system');
+    return;
+  }
+  if (cmd === 'THEME' || cmd === 'SETTHEME' || cmd === 'ธีม') {
+    const a = (parts[1] || '').toLowerCase();
+    if (!a || a === 'list' || a === 'ls' || a === '?') {
+      listThemes(true); // show table → type 1-7
+      return;
+    }
+    if (applyTheme(a)) {
+      themePick = false;
+      beep(true);
+    } else {
+      print(LANG === 'th' ? 'ไม่รู้จักธีม — เลือกจากตาราง' : 'Unknown theme — pick from list', 'warn');
+      listThemes(true);
+    }
     return;
   }
   if (cmd === 'SETPASS') {
@@ -2055,7 +2434,9 @@ CMD.addEventListener('keydown', async (e) => {
   else if (e.key === 'F10') { e.preventDefault(); handleCommand('LOCK'); }
   else if (e.key === 'F12') {
     e.preventDefault();
-    if (wizard) {
+    if (themePick) {
+      cancelThemePick();
+    } else if (wizard) {
       wizard = null;
       setMode(mode);
       print(LANG === 'th' ? 'ยกเลิกแล้ว' : 'Cancelled', 'warn');
@@ -2063,7 +2444,10 @@ CMD.addEventListener('keydown', async (e) => {
       CMD.value = '';
     }
   }
-  else if (e.key === 'Escape') { CMD.value = ''; }
+  else if (e.key === 'Escape') {
+    if (themePick) cancelThemePick();
+    else CMD.value = '';
+  }
 });
 
 // Focus CLI only when not in GUI
